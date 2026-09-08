@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="520" height="140" viewBox="0 0 520 140" role="img" aria-label="talanton">
+  <title>talanton</title>
+  <g transform="translate(8 26) scale(0.63)">
+    <rect width="140" height="140" rx="18" fill="#1D2025"/>
+    <!-- A balance. The beam's midpoint sits on the pivot, the hangers are
+         drawn lighter than the beam so the two do not read as one bent arm,
+         and the pans are bowls rather than bars. One side is heavier: this
+         weighs, it does not draw lots. -->
+    <rect x="66.5" y="49" width="7" height="65" rx="3.5" fill="#FBFAF7" opacity="0.45"/>
+    <rect x="44" y="112" width="52" height="7" rx="3.5" fill="#FBFAF7" opacity="0.45"/>
+    <path d="M26 38 L114 60" stroke="#FBFAF7" stroke-width="5.5" stroke-linecap="round" fill="none"/>
+    <g stroke="#FBFAF7" stroke-width="2.2" opacity="0.75" fill="none">
+      <path d="M26 38 L26 60"/>
+      <path d="M114 60 L114 84"/>
+    </g>
+    <path d="M13 60 Q26 73 39 60" stroke="#FBFAF7" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+    <path d="M101 84 Q114 97 127 84" stroke="#C2542F" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+    <circle cx="70" cy="49" r="5.5" fill="#FBFAF7"/>
+  </g>
+  <text x="126" y="88" font-family="Inter, Archivo, ui-sans-serif, -apple-system, Segoe UI, Helvetica, Arial, sans-serif" font-size="56" font-weight="600" letter-spacing="-2.2" fill="#FBFAF7">talanton</text>
+</svg>

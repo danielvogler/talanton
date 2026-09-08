@@ -1,0 +1,66 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Length 1776 >>
+stream
+BT /s 20 Tf 56 768 Td (Dr Camille Dubois) Tj ET
+BT /r 9 Tf 56 751 Td (Lausanne, Switzerland  ·  camille.dubois@example.test  ·  French citizen \(EU\)) Tj ET
+BT /b 9 Tf 56 729 Td (APPOINTMENTS) Tj ET
+q 0.7 G 0.6 w 56 725 m 539 725 l S Q
+BT /b 9.5 Tf 56 709 Td (2021 – present) Tj ET
+BT /r 9.5 Tf 152 709 Td (Postdoctoral Researcher, Invented Institute, Lausanne) Tj ET
+BT /r 9 Tf 152 696 Td (Retrieval-augmented generation and long-context evaluation.) Tj ET
+BT /r 9 Tf 152 684.5 Td (Built a benchmark suite adopted by three collaborating groups.) Tj ET
+BT /r 9 Tf 152 673 Td (Trained models up to 7B parameters on the internal cluster.) Tj ET
+BT /r 9 Tf 152 661.5 Td (All of it research code: nothing was deployed to external users,) Tj ET
+BT /r 9 Tf 152 650 Td (and the benchmark ran as a batch job rather than a service.) Tj ET
+BT /b 9.5 Tf 56 628.5 Td (2017 – 2021) Tj ET
+BT /r 9.5 Tf 152 628.5 Td (PhD Candidate, Invented University) Tj ET
+BT /r 9 Tf 152 615.5 Td (Thesis on efficient attention mechanisms, implemented from scratch.) Tj ET
+BT /b 9 Tf 56 594 Td (SELECTED PUBLICATIONS) Tj ET
+q 0.7 G 0.6 w 56 590 m 539 590 l S Q
+BT /s 9 Tf 56 574 Td (Dubois, C. et al. \(2025\). Long-context evaluation beyond needle retrieval. Invented Venue.) Tj ET
+BT /s 9 Tf 56 561 Td (Dubois, C. and Invented, A. \(2024\). Sparse attention at inference time. Invented Journal.) Tj ET
+BT /s 9 Tf 56 548 Td (Dubois, C. \(2022\). A benchmark for retrieval-augmented answering. Invented Workshop.) Tj ET
+BT /b 9 Tf 56 523 Td (SKILLS AND LANGUAGES) Tj ET
+q 0.7 G 0.6 w 56 519 m 539 519 l S Q
+BT /r 9 Tf 56 505 Td (PyTorch, JAX, distributed training, experimental design, statistics.) Tj ET
+BT /r 9 Tf 56 493 Td (French native  ·  English fluent  ·  German A2.  Available immediately.) Tj ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 7 0 R /MediaBox [0 0 595 842] /Resources << /Font << /r 1 0 R /b 2 0 R /i 3 0 R /s 4 0 R >> >> /Contents 5 0 R >>
+endobj
+7 0 obj
+<< /Type /Pages /Kids [6 0 R] /Count 1 >>
+endobj
+8 0 obj
+<< /Type /Catalog /Pages 7 0 R >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000313 00000 n 
+0000000412 00000 n 
+0000002240 00000 n 
+0000002392 00000 n 
+0000002449 00000 n 
+trailer
+<< /Size 9 /Root 8 0 R >>
+startxref
+2498
+%%EOF

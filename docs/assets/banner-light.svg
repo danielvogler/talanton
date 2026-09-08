@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="300" viewBox="0 0 1200 300" role="img" aria-label="talanton — drafts your job ads, weighs the applications that arrive by email against one written standard, and sends you a ranked shortlist. You decide.">
+  <title>talanton</title>
+  <!-- The mark is the object the project is named for: the stone slab Athens
+       used to fill public office. Every citizen's token went into the same
+       grid of slots; a bronze tube down the side decided which row came out.
+       Filled slots are applications, the terracotta one is who you get to
+       read, and the tube is the rule that picked them. -->
+  <rect width="1200" height="300" fill="#FBFAF7"/>
+
+  <g transform="translate(76 90)">
+    <rect width="140" height="140" rx="18" fill="#14161A"/>
+    <!-- A balance. The beam's midpoint sits on the pivot, the hangers are
+         drawn lighter than the beam so the two do not read as one bent arm,
+         and the pans are bowls rather than bars. One side is heavier: this
+         weighs, it does not draw lots. -->
+    <rect x="66.5" y="49" width="7" height="65" rx="3.5" fill="#FBFAF7" opacity="0.45"/>
+    <rect x="44" y="112" width="52" height="7" rx="3.5" fill="#FBFAF7" opacity="0.45"/>
+    <path d="M26 38 L114 60" stroke="#FBFAF7" stroke-width="5.5" stroke-linecap="round" fill="none"/>
+    <g stroke="#FBFAF7" stroke-width="2.2" opacity="0.75" fill="none">
+      <path d="M26 38 L26 60"/>
+      <path d="M114 60 L114 84"/>
+    </g>
+    <path d="M13 60 Q26 73 39 60" stroke="#FBFAF7" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+    <path d="M101 84 Q114 97 127 84" stroke="#C2542F" stroke-width="4.5" stroke-linecap="round" fill="none"/>
+    <circle cx="70" cy="49" r="5.5" fill="#FBFAF7"/>
+  </g>
+
+  <g font-family="Inter, Archivo, ui-sans-serif, -apple-system, Segoe UI, Helvetica, Arial, sans-serif">
+    <text x="258" y="66" font-size="13" font-weight="600" letter-spacing="2.4" fill="#C2542F">AGENTIC RECRUITMENT WORKFLOW</text>
+
+    <text x="256" y="142" font-size="76" font-weight="600" letter-spacing="-3" fill="#14161A">talanton</text>
+    <rect x="258" y="160" width="54" height="3" rx="1.5" fill="#C2542F"/>
+
+    <text x="257" y="202" font-size="23" fill="#57534E">Drafts your job ads, weighs every application against</text>
+    <text x="257" y="233" font-size="23" fill="#57534E">one written standard, and shortlists. You decide.</text>
+
+    <text x="257" y="270" font-size="14" letter-spacing="0.3" fill="#A8A29A">Open source · runs on your own mailbox and storage · Google ADK, deployable to Vertex AI</text>
+  </g>
+</svg>

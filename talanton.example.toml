@@ -1,0 +1,109 @@
+# Copy into your hiring repository as talanton.toml.
+#
+# Settings go here and are committed. Secrets never do — every password comes
+# from the environment, so this file is safe to review in a pull request, which
+# is the point.
+
+[company]
+name = "Example Co"
+# Reaches the agent's own instructions. One factual clause, not marketing.
+description = "a small engineering company in Zürich"
+
+[store]
+# The working area. openings/ lives here, and relative location paths below
+# resolve against it.
+path = "."
+
+# ---------------------------------------------------------------------------
+# The two locations the core runs on. Everything else is optional.
+# ---------------------------------------------------------------------------
+
+# Where CVs are read from. Put them there however you like: drop them in the
+# folder, or let `talanton fetch` pull them out of a mailbox.
+[storage.cvs]
+backend = "local"           # local | gdrive | gcs
+path = "cvs"
+# backend = "gdrive"
+# folder_id = "1AbC..."     # from: talanton drive-folder "hr/recruiting"
+# folder = "hr/recruiting"  # or give the path and resolve it at runtime
+# backend = "gcs"
+# bucket = "example-hiring" # pin the bucket's region when you create it
+# prefix = "cvs"
+
+# Where assessments are written. Can be a different backend from the CVs.
+[storage.assessments]
+backend = "local"
+path = "assessments"
+
+# ---------------------------------------------------------------------------
+# Optional: the two mail adapters. They are separate accounts on purpose.
+# ---------------------------------------------------------------------------
+
+# Reading the apply mailbox. Password from $TALANTON_INBOUND_PASSWORD.
+# Nothing that holds these credentials can send — `talanton.inbound` has no
+# SMTP path and does not import the module that does. Leave `user` empty and
+# `fetch` is simply unavailable; everything else still works.
+[mail.inbound]
+user = "apply@example.com"
+imap_server = "imap.gmail.com"
+imap_port = 993
+# Ceilings, so a flooded mailbox is a bounded run rather than a bill. What is
+# left over waits for the next run; an oversized attachment is skipped and the
+# filename logged, so somebody can ask for a smaller one.
+max_emails_per_run = 25
+max_attachment_mb = 20
+
+# Sending the shortlist. A DIFFERENT account, with no access to the apply
+# mailbox, so if it were ever misused it could not read a CV.
+# Password from $TALANTON_OUTBOUND_PASSWORD.
+[mail.outbound]
+user = "hiring-bot@example.com"
+smtp_server = "smtp.gmail.com"
+smtp_port = 465
+
+# A reply to the shortlist should land somewhere a person reads. Defaults to
+# the apply mailbox above.
+# reply_to = "people@example.com"
+
+# The shortlist goes to these addresses and nowhere else. It carries candidate
+# ids and CV links, never names — who may learn an identity is decided by who
+# can open the CV.
+operators = ["hiring@example.com"]
+
+# The only domains any outbound mail may reach. Empty means unrestricted.
+allow_domains = ["example.com"]
+
+# Log mail instead of sending it. Turn off once you trust it.
+dry_run = true
+
+[schedule]
+# Nothing here executes this — whatever fires `talanton cycle` owns that.
+cron = "0 8,16 * * 1-5"
+idle_timeout_seconds = 900
+
+[screening]
+# Where the model is served. Named here rather than left to an ambient gcloud
+# default — running a screening against the wrong project is exactly the
+# mistake ambient defaults cause. An exported env var still wins over this.
+project  = "your-project"
+# `global` routes to wherever the model is served. Verified 2026-09-07: no
+# Gemini model is served from europe-west6, europe-west4 or europe-west1 —
+# a regional value there fails with 404, it does not fall back.
+location = "global"
+
+# The identity to act as, when the one talanton finds cannot hold Drive scopes.
+# Leave it unset on a laptop that already impersonates the account. Set it for a
+# Cloud Run job: the metadata server there returns a cloud-platform token
+# whatever is asked of it, and the Drive API rejects cloud-platform, which
+# surfaces as a 403 that looks like a permissions problem and is not one.
+# Needs roles/iam.serviceAccountTokenCreator on the account, held by the account
+# itself. Still no key file.
+# service_account = "talanton@your-project.iam.gserviceaccount.com"
+
+# A stable model, not a preview — a screening standard should not change under
+# you between runs. `gemini-2.5-pro` if you want pro tier; an @-versioned
+# Anthropic id such as claude-opus-4-5@20251101 also works. Not every model is
+# served in every region.
+model = "gemini-3.8-flash"
+max_output_tokens = 8000
+default_role = "ai-engineer"

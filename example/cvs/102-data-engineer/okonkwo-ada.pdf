@@ -1,0 +1,69 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Length 1904 >>
+stream
+q 0.93 G 52 w 0 796 m 595 796 l S Q
+BT /b 20 Tf 56 800 Td (ADA OKONKWO) Tj ET
+BT /r 9.5 Tf 56 784 Td (Senior Data Engineer  ·  Zurich  ·  ada.okonkwo@example.test) Tj ET
+BT /r 9 Tf 56 746 Td (Swiss B permit since 04/2018  ·  English fluent, German B2  ·  3 months notice) Tj ET
+BT /b 9 Tf 56 720 Td (SUMMARY) Tj ET
+q 0.7 G 0.6 w 56 716 m 539 716 l S Q
+BT /r 9.5 Tf 56 702 Td (Nine years building data platforms, the last four owning one in production for a) Tj ET
+BT /r 9.5 Tf 56 690 Td (regulated insurer. Comfortable being the person paged when the pipeline stops.) Tj ET
+BT /b 9 Tf 56 662 Td (EMPLOYMENT) Tj ET
+q 0.7 G 0.6 w 56 658 m 539 658 l S Q
+BT /b 10 Tf 56 644 Td (Lead Data Engineer, Invented Insurance AG) Tj ET
+BT /r 9 Tf 462.5 644 Td (05/2021 – present) Tj ET
+BT /r 9.5 Tf 56 631 Td (Own the claims data platform end to end: ingestion, warehouse, lineage and) Tj ET
+BT /r 9.5 Tf 56 619 Td (the on-call rotation for it. Rebuilt the nightly load as an incremental one) Tj ET
+BT /r 9.5 Tf 56 607 Td (after a full refresh overran its window and delayed reporting by a day; the) Tj ET
+BT /r 9.5 Tf 56 595 Td (postmortem and the fix were both mine. Runs on GCP with Terraform and dbt.) Tj ET
+BT /b 10 Tf 56 571 Td (Data Engineer, Invented Retail Group) Tj ET
+BT /r 9 Tf 462.5 571 Td (01/2019 – 04/2021) Tj ET
+BT /r 9.5 Tf 56 558 Td (Built the event pipeline behind the loyalty programme. Kafka, BigQuery, and) Tj ET
+BT /r 9.5 Tf 56 546 Td (the first tests the team had for a data path.) Tj ET
+BT /b 10 Tf 56 522 Td (Analyst Programmer, Invented Consultancy) Tj ET
+BT /r 9 Tf 462.5 522 Td (08/2016 – 12/2018) Tj ET
+BT /r 9.5 Tf 56 509 Td (SQL and reporting for client engagements. First exposure to production.) Tj ET
+BT /b 9 Tf 56 485 Td (TOOLS) Tj ET
+q 0.7 G 0.6 w 56 481 m 539 481 l S Q
+BT /r 9 Tf 56 468 Td (Python  ·  SQL  ·  dbt  ·  BigQuery  ·  Kafka  ·  Airflow  ·  Terraform  ·  GCP) Tj ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 7 0 R /MediaBox [0 0 595 842] /Resources << /Font << /r 1 0 R /b 2 0 R /i 3 0 R /s 4 0 R >> >> /Contents 5 0 R >>
+endobj
+7 0 obj
+<< /Type /Pages /Kids [6 0 R] /Count 1 >>
+endobj
+8 0 obj
+<< /Type /Catalog /Pages 7 0 R >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000313 00000 n 
+0000000412 00000 n 
+0000002368 00000 n 
+0000002520 00000 n 
+0000002577 00000 n 
+trailer
+<< /Size 9 /Root 8 0 R >>
+startxref
+2626
+%%EOF

@@ -1,0 +1,95 @@
+[project]
+name = "talanton"
+version = "0.6.0"
+description = "An agentic hiring pipeline: draft the role, screen what arrives, surface only who is worth reading."
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "Apache-2.0" }
+authors = [{ name = "danielvogler" }]
+dependencies = [
+    # >=2.0, not >=1.0: `google.adk.apps.App` and `InMemoryRunner(app=...)` do not
+    # exist before 1.14, and 2.x is the only line CI actually resolves against.
+    "google-adk>=2.0,<3",
+    "anthropic[vertex]>=0.60",
+    "imapclient>=3.0",
+    "pypdf>=5.0",
+    "pyyaml>=6.0",
+]
+
+[project.scripts]
+talanton = "talanton.cli:main"
+
+[project.optional-dependencies]
+dev = ["pytest>=8.0", "ruff>=0.8", "mypy>=1.13", "types-PyYAML", "pre-commit>=4.0"]
+# Only needed when a location uses backend = "gdrive". Auth is application default
+# credentials; there is never a service-account key file.
+gdrive = ["google-api-python-client>=2.140", "google-auth>=2.30"]
+# Only needed when a location uses backend = "gcs".
+gcs = ["google-cloud-storage>=2.18"]
+# Only needed when a mailbox password lives in Secret Manager rather than .env.
+secrets = ["google-cloud-secret-manager>=2.20"]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["talanton"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 112
+target-version = "py311"
+
+[tool.ruff.lint]
+select = [
+    "E", "W",      # pycodestyle
+    "F",           # pyflakes
+    "I",           # import sorting
+    "UP",          # pyupgrade
+    "B",           # bugbear
+    "SIM",         # simplify
+    "C4",          # comprehensions
+    "RET",         # returns
+    "PTH",         # use pathlib
+    "N",           # naming
+    "TRY",         # exception antipatterns
+    "RUF",
+]
+ignore = [
+    "TRY003",   # long messages in raises: this project explains itself in them, deliberately
+    "TRY400",   # logging.error over .exception, where the traceback is not the point
+    "RET504",   # a named return value is often the clearer thing
+    "RUF001",   # en dashes in prose and in salary ranges are deliberate
+]
+
+[tool.ruff.lint.per-file-ignores]
+# Tests say what they mean in the name and the body; asserts and long lines are fine.
+"tests/*" = ["E501", "N802"]
+
+[tool.mypy]
+python_version = "3.11"
+files = ["talanton"]
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
+check_untyped_defs = true
+disallow_untyped_defs = false
+
+# Google's client libraries and ADK ship no usable stubs.
+[[tool.mypy.overrides]]
+module = [
+    "google.*",
+    "google.cloud.*",
+    "google_auth_httplib2.*",
+    "googleapiclient.*",
+    "httplib2.*",
+    "imapclient.*",
+    "pypdf.*",
+    "yaml.*",
+]
+ignore_missing_imports = true
+follow_imports = "skip"

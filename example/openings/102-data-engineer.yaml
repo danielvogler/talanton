@@ -1,0 +1,79 @@
+opening: 102
+id: data-engineer
+version: 1
+title: Data Engineer
+company: Example Co
+location: Zürich, CH
+workplace: hybrid
+employment: full-time
+apply_to: apply+102@example.com
+closes: '2026-12-15'
+summary: Own the data platform behind everything else we ship.
+pitch: 'We need someone to own the data platform end to end: ingestion, warehouse,
+
+  lineage, and being the person paged when the nightly load does not finish.
+
+  It is a first hire for this area, so you would set the conventions.
+
+  '
+responsibilities:
+- Own ingestion, transformation and the warehouse behind them.
+- Make data quality measurable rather than a matter of opinion.
+- Carry the pager for what you build.
+requirements:
+- Production ownership of a data platform, including its failures.
+- Strong SQL and Python.
+- Right to work in Switzerland, or an existing right to relocate here.
+nice_to_have:
+- dbt, BigQuery or an equivalent warehouse.
+- Regulated-industry experience.
+knockouts:
+- id: work_permit
+  test: Can work in Switzerland, or already holds the right to relocate here.
+- id: english
+  test: Working English, sufficient for client conversations.
+screening:
+  min_score: 5.0
+rubric:
+- id: production_experience
+  weight: 50
+  guide: '8 — has owned a data platform in production, including the night it broke.
+
+    5 — has shipped pipelines other people depended on.
+
+    2 — analysis and notebooks only.
+
+    '
+- id: data_modelling
+  weight: 30
+  guide: '8 — can explain a modelling decision they later regretted, and why.
+
+    5 — has built a warehouse schema that held up.
+
+    2 — has written SQL against someone else''s schema.
+
+    '
+- id: ownership
+  weight: 20
+  guide: '8 — chose the tools, ran the thing, fixed it at 3am.
+
+    5 — owned a component within someone else''s system.
+
+    2 — always worked inside decisions made by others.
+
+    '
+must_not_influence:
+- Name, gender, age, photograph, marital status.
+- Nationality, beyond the stated right to work.
+- Prestige of a university or employer as a stand-in for demonstrated ability.
+boards:
+  linkedin:
+    title_max: 200
+    body_max: 25000
+    setup:
+    - Post from the company page, not a personal profile.
+    - Choose "Apply on company website".
+  jobs-ch:
+    title_max: 100
+    setup:
+    - Buy the posting before publishing.

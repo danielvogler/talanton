@@ -1,0 +1,81 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Length 2154 >>
+stream
+BT /b 19 Tf 56 772 Td (LARS ANDERSSON) Tj ET
+BT /i 11 Tf 56 754 Td (Platform Engineer) Tj ET
+q 0.7 G 0.6 w 56 742 m 539 742 l S Q
+BT /b 8.5 Tf 56 714 Td (CONTACT) Tj ET
+BT /r 9 Tf 56 701 Td (Gothenburg, Sweden) Tj ET
+BT /r 9 Tf 56 689.5 Td (lars.andersson@example.test) Tj ET
+BT /r 9 Tf 56 678 Td (+46 31 000 00 00) Tj ET
+BT /b 8.5 Tf 56 657.5 Td (WORK AUTHORISATION) Tj ET
+BT /r 9 Tf 56 644.5 Td (Swedish citizen.) Tj ET
+BT /r 9 Tf 56 633 Td (No Swiss permit; would) Tj ET
+BT /r 9 Tf 56 621.5 Td (need one arranged.) Tj ET
+BT /r 9 Tf 56 610 Td (Willing to relocate.) Tj ET
+BT /b 8.5 Tf 56 589.5 Td (LANGUAGES) Tj ET
+BT /r 9 Tf 56 576.5 Td (Swedish  native) Tj ET
+BT /r 9 Tf 56 565 Td (English  fluent) Tj ET
+BT /r 9 Tf 56 553.5 Td (German   A2) Tj ET
+BT /b 8.5 Tf 56 533 Td (TOOLS) Tj ET
+BT /r 9 Tf 56 520 Td (Python, Rust, Go) Tj ET
+BT /r 9 Tf 56 508.5 Td (Kubernetes, Triton) Tj ET
+BT /r 9 Tf 56 497 Td (vLLM, Prometheus) Tj ET
+BT /r 9 Tf 56 485.5 Td (Terraform, ArgoCD) Tj ET
+BT /b 8.5 Tf 210 714 Td (PROFILE) Tj ET
+BT /r 9.5 Tf 210 700 Td (Platform engineer, twelve years. Four of them running LLM) Tj ET
+BT /r 9.5 Tf 210 686.5 Td (inference infrastructure for a consumer product at scale.) Tj ET
+BT /b 8.5 Tf 210 661 Td (EXPERIENCE) Tj ET
+BT /b 10 Tf 210 645 Td (Principal Engineer) Tj ET
+BT /r 9 Tf 476 645 Td (2020 – present) Tj ET
+BT /i 9 Tf 210 633 Td (Invented Company AB, Gothenburg) Tj ET
+BT /r 9.5 Tf 210 619 Td (•  Ran the inference platform behind a consumer product) Tj ET
+BT /r 9.5 Tf 210 607 Td (   serving millions of requests a day. Owned capacity,) Tj ET
+BT /r 9.5 Tf 210 595 Td (   cost, latency SLOs and the on-call rotation.) Tj ET
+BT /r 9.5 Tf 210 583 Td (•  Led the move from a managed API to self-hosted models:) Tj ET
+BT /r 9.5 Tf 210 571 Td (   70% lower spend with p99 latency held flat.) Tj ET
+BT /b 10 Tf 210 549 Td (Staff Engineer) Tj ET
+BT /r 9 Tf 489.5 549 Td (2013 – 2020) Tj ET
+BT /i 9 Tf 210 537 Td (Invented Systems AB, Stockholm) Tj ET
+BT /r 9.5 Tf 210 523 Td (•  Distributed systems and service mesh. Took the platform) Tj ET
+BT /r 9.5 Tf 210 511 Td (   from three services to sixty without adding an SRE.) Tj ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 7 0 R /MediaBox [0 0 595 842] /Resources << /Font << /r 1 0 R /b 2 0 R /i 3 0 R /s 4 0 R >> >> /Contents 5 0 R >>
+endobj
+7 0 obj
+<< /Type /Pages /Kids [6 0 R] /Count 1 >>
+endobj
+8 0 obj
+<< /Type /Catalog /Pages 7 0 R >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000313 00000 n 
+0000000412 00000 n 
+0000002618 00000 n 
+0000002770 00000 n 
+0000002827 00000 n 
+trailer
+<< /Size 9 /Root 8 0 R >>
+startxref
+2876
+%%EOF

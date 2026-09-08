@@ -1,0 +1,28 @@
+WEI CHEN
+Zug, Switzerland | wei.chen@example.test | Swiss B permit, held since 2019
+
+SUMMARY
+Backend engineer, seven years. Two years building LLM features inside a larger
+product team.
+
+EXPERIENCE
+
+Senior Backend Engineer, Limmat Software GmbH, Zug — 2019 to present
+  Owned the search and recommendation service behind a B2B catalogue product.
+  Added a retrieval-augmented answering feature in 2023: chunking, embeddings,
+  a reranker. It shipped and is used, though I owned the component rather than
+  the whole system — deployment and on-call sat with the platform team.
+  Wrote the offline evaluation set for it. No online measurement.
+
+Backend Engineer, Rheinbrücke Analytics, Basel — 2017 to 2019
+  Data ingestion in Python. ETL, scheduling, monitoring dashboards.
+
+SKILLS
+Python, TypeScript, PostgreSQL, Elasticsearch, Docker, some Kubernetes.
+Mandarin (native), English (fluent), German (B1, improving).
+
+EDUCATION
+BSc Software Engineering, invented university, 2017.
+
+AVAILABILITY
+Two months' notice.

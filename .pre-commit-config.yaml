@@ -1,0 +1,37 @@
+# Install once:  uv run pre-commit install
+# Run on everything:  uv run pre-commit run --all-files
+
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: trailing-whitespace
+      - id: end-of-file-fixer
+      - id: check-yaml
+      - id: check-toml
+      - id: check-merge-conflict
+      # uv.lock is over 500 KB on its own and is meant to be committed.
+      - id: check-added-large-files
+        args: [--maxkb=1024]
+      - id: check-case-conflict
+
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.14.4
+    hooks:
+      # `ruff` is a deprecated alias for `ruff-check` and warns on every run.
+      - id: ruff-check
+        args: [--fix]
+      - id: ruff-format
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.18.2
+    hooks:
+      - id: mypy
+        files: ^talanton/
+        additional_dependencies: [types-PyYAML]
+
+  # Candidate data and credentials are the two things that must not land here.
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.21.2
+    hooks:
+      - id: gitleaks

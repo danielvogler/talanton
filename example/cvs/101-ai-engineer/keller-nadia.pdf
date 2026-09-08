@@ -1,0 +1,81 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Length 2203 >>
+stream
+BT /b 21 Tf 56 770 Td (NADIA KELLER) Tj ET
+BT /r 10 Tf 56 754 Td (Machine Learning Engineer  |  Zug, Switzerland) Tj ET
+BT /r 9 Tf 56 741 Td (nadia.keller@example.test  |  Swiss C permit, held since 2016) Tj ET
+BT /b 9 Tf 56 715 Td (EXPERIENCE) Tj ET
+q 0.7 G 0.6 w 56 711 m 539 711 l S Q
+BT /b 10.5 Tf 56 695 Td (Senior ML Engineer) Tj ET
+BT /r 9 Tf 458 695 Td (Mar 2020 – present) Tj ET
+BT /i 9 Tf 56 683 Td (Invented Software GmbH, Zug) Tj ET
+BT /r 9.5 Tf 66 669 Td (–  Own the recommendation service end to end: training, serving,) Tj ET
+BT /r 9.5 Tf 66 657 Td (   evaluation and the pager. Six years, two incidents that were mine.) Tj ET
+BT /r 9.5 Tf 66 645 Td (–  Replaced an offline-only eval with an online one after a ranking) Tj ET
+BT /r 9.5 Tf 66 633 Td (   regression went unnoticed for nine days.) Tj ET
+BT /r 9.5 Tf 66 621 Td (–  Cut serving cost 45% by distilling the ranker.) Tj ET
+BT /b 10.5 Tf 56 599 Td (ML Engineer) Tj ET
+BT /r 9 Tf 453.5 599 Td (Aug 2017 – Feb 2020) Tj ET
+BT /i 9 Tf 56 587 Td (Invented Analytics AG, Basel) Tj ET
+BT /r 9.5 Tf 66 573 Td (–  Forecasting models for retail inventory. Built the feature store) Tj ET
+BT /r 9.5 Tf 66 561 Td (   and the backfill tooling the team still uses.) Tj ET
+BT /b 10.5 Tf 56 539 Td (Software Engineer) Tj ET
+BT /r 9 Tf 453.5 539 Td (Sep 2015 – Jul 2017) Tj ET
+BT /i 9 Tf 56 527 Td (Invented Labs, Bern) Tj ET
+BT /r 9.5 Tf 66 513 Td (–  Python services and the data ingestion pipeline.) Tj ET
+BT /b 9 Tf 56 491 Td (SKILLS) Tj ET
+q 0.7 G 0.6 w 56 487 m 539 487 l S Q
+BT /r 9 Tf 56 473 Td (Python) Tj ET
+BT /r 9 Tf 56 461 Td (PyTorch) Tj ET
+BT /r 9 Tf 56 449 Td (scikit-learn) Tj ET
+BT /r 9 Tf 221 473 Td (GCP, Vertex AI) Tj ET
+BT /r 9 Tf 221 461 Td (Kubernetes) Tj ET
+BT /r 9 Tf 221 449 Td (Terraform) Tj ET
+BT /r 9 Tf 386 473 Td (Feature stores) Tj ET
+BT /r 9 Tf 386 461 Td (A/B testing) Tj ET
+BT /r 9 Tf 386 449 Td (Airflow) Tj ET
+BT /b 9 Tf 56 423 Td (EDUCATION AND LANGUAGES) Tj ET
+q 0.7 G 0.6 w 56 419 m 539 419 l S Q
+BT /r 9 Tf 56 405 Td (MSc Computer Science, Invented University) Tj ET
+BT /r 9 Tf 521 405 Td (2015) Tj ET
+BT /r 9 Tf 56 392 Td (German native  |  English fluent  |  French B1.  Notice period: two months.) Tj ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 7 0 R /MediaBox [0 0 595 842] /Resources << /Font << /r 1 0 R /b 2 0 R /i 3 0 R /s 4 0 R >> >> /Contents 5 0 R >>
+endobj
+7 0 obj
+<< /Type /Pages /Kids [6 0 R] /Count 1 >>
+endobj
+8 0 obj
+<< /Type /Catalog /Pages 7 0 R >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000313 00000 n 
+0000000412 00000 n 
+0000002667 00000 n 
+0000002819 00000 n 
+0000002876 00000 n 
+trailer
+<< /Size 9 /Root 8 0 R >>
+startxref
+2925
+%%EOF

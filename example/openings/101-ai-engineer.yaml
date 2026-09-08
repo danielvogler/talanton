@@ -1,0 +1,115 @@
+# The backbone. Ad copy, knockouts and rubric in one file, because they are the
+# same decision written three ways.
+#
+# `opening` is the number people quote. Five postings can share the title
+# "AI Engineer"; only the number says which one, and each opening has its own
+# folder of CVs and assessments.
+
+opening: 101
+id: ai-engineer
+version: 1
+title: AI Engineer
+company: Example Co
+location: Zürich, CH
+workplace: hybrid
+employment: full-time
+apply_to: apply@example.com
+closes: 2026-11-30
+salary:
+  currency: CHF
+  min: 120000
+  max: 150000
+summary: 'Build and ship agentic systems that do real work for clients — not demos. Small
+  team, direct ownership, Zürich.
+
+  '
+pitch: 'We build agentic systems for companies that need them to actually work —
+
+  systems that read messy inputs, decide something, and are accountable for the
+
+  decision afterwards. Most of what we ship runs unattended against real
+
+  business processes, which sets the bar: it has to be right, it has to be
+
+  observable, and someone has to be able to explain what it did and why.
+
+
+  You would be the first engineering hire. You will pick tools, set conventions,
+
+  and own things end to end — the prompt, the evaluation harness, the deployment
+
+  and the on-call for it. The work is broad rather than deep: some weeks are
+
+  model and retrieval work, some are plumbing, some are sitting with a client to
+
+  work out what the system is supposed to do.
+
+  '
+responsibilities:
+- Design and ship agentic systems end to end, from problem framing to production.
+- Build evaluation harnesses that tell us whether a change made things better.
+- 'Own reliability for what you ship: tracing, cost, failure modes, rollback.'
+- Turn a vague client process into a specified one.
+requirements:
+- Production experience with LLM-based systems, not just prototypes.
+- Strong Python, and the judgement to know when a system needs less of it.
+- Comfort owning infrastructure — containers, cloud, CI, secrets.
+- Right to work in Switzerland, or an existing right to relocate here.
+nice_to_have:
+- Experience building evaluation and observability tooling.
+- Consulting or client-facing background.
+- Open-source work we can read.
+knockouts:
+- id: work_permit
+  test: Can work in Switzerland, or already holds the right to relocate here.
+- id: english
+  test: Working English, sufficient for client conversations.
+screening:
+  min_score: 5.0
+rubric:
+- id: production_experience
+  weight: 40
+  guide: "8 — has owned a system in production including its failures: on call,\n    rollbacks,\
+    \ cost, an incident that was their fault.\n5 — has shipped something small that real users\
+    \ touched.\n2 — prototypes, research code and coursework only. Research and academic\n\
+    \    deployments are not interchangeable with commercial ones; a candidate\n    whose\
+    \ systems only ever ran as prototypes scores at most 4 here\n    regardless of technical\
+    \ sophistication.\n"
+- id: agentic_depth
+  weight: 30
+  guide: "8 — has built agent loops, evaluation harnesses or retrieval systems and\n    can\
+    \ say concretely what went wrong and what they changed.\n5 — has used a framework to build\
+    \ something that worked.\n2 — has called an LLM API.\n"
+- id: ownership
+  weight: 30
+  guide: "8 — evidence of end-to-end ownership: chose the tools, ran the thing,\n    fixed\
+    \ it at 3am.\n5 — owned a component within someone else's system.\n2 — always worked inside\
+    \ decisions made by others.\n"
+must_not_influence:
+- Name, gender, age, photograph, marital status.
+- Nationality, beyond the stated right to work.
+- Prestige of a university or employer as a stand-in for demonstrated ability.
+boards:
+  linkedin:
+    title_max: 200
+    body_max: 25000
+    setup:
+    - Post from the company page, not a personal profile.
+    - Choose "Apply on company website" — Easy Apply keeps applications inside LinkedIn where
+      the agent cannot see them.
+  indeed:
+    title: AI Engineer (Python, LLMs) — Zürich
+    title_max: 100
+    body_max: 15000
+    setup:
+    - Post from an Indeed employer account, sponsored or free.
+    - Set the application method to "Email me the applications" pointing at the apply address
+      above. Indeed Apply routes candidates through Indeed's own inbox, where the agent cannot
+      see them.
+    - Indeed also crawls careers pages carrying JobPosting structured data. If you have one,
+      the crawl and this posting can duplicate — pick one.
+  jobs-ch:
+    title_max: 100
+    setup:
+    - Buy the posting before publishing.
+    - Decide German or English; English is fine for engineering roles here.

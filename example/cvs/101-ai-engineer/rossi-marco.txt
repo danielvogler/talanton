@@ -1,0 +1,35 @@
+MARCO ROSSI
+Zürich, Switzerland | marco.rossi@example.test | Swiss citizen
+
+SUMMARY
+Machine learning engineer, nine years, six of them running LLM-backed systems
+in production for paying customers.
+
+EXPERIENCE
+
+Staff Engineer, Helvetica Data AG, Zürich — 2021 to present
+  Built and ran a document-understanding pipeline processing ~40k insurance
+  claims a month. Owned it end to end: retrieval, evaluation harness, cost
+  control, and the pager. Took the on-call rotation for three years.
+  An incident in 2023 was mine: a prompt change cut extraction accuracy and we
+  did not notice for eleven days because the eval suite only measured latency.
+  I rebuilt the harness around output quality and added a canary set. That
+  class of failure has not recurred.
+  Cut inference spend 60% by routing simple documents to a smaller model.
+
+Senior Engineer, Nordwind Logistics, Basel — 2017 to 2021
+  Route optimisation services in Python and Go. Moved deployment from hand-run
+  scripts to CI with staged rollout and automatic rollback.
+
+Software Engineer, Alpine Retail Systems, Bern — 2015 to 2017
+  Inventory forecasting. First production exposure.
+
+SKILLS
+Python, Go, PyTorch, retrieval systems, evaluation harnesses, GCP, Terraform,
+observability. German (native), English (fluent), Italian (fluent).
+
+EDUCATION
+MSc Computer Science, invented university, 2015.
+
+AVAILABILITY
+Three months' notice.

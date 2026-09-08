@@ -1,0 +1,32 @@
+# The example deployment. Invented company; the CVs in cvs/ are invented people.
+# Run the whole pipeline against it with no mailbox and no credentials:
+#
+#   talanton --config example/talanton.toml status
+#   talanton --config example/talanton.toml assess ai-engineer
+
+[company]
+name = "Example Co"
+description = "a small engineering company in Zürich"
+
+[store]
+path = "."
+
+[storage.cvs]
+backend = "local"
+path = "cvs"
+
+[storage.assessments]
+backend = "local"
+path = "assessments"
+
+# No [mail.inbound] at all — `fetch` is unavailable and nothing needs it.
+[screening]
+# Named explicitly, so a run cannot land on whatever gcloud last pointed at.
+# Uncomment and set these, or export GOOGLE_CLOUD_PROJECT / GOOGLE_CLOUD_LOCATION.
+# project  = "your-project"
+# location = "global"    # no Gemini model is served from a europe-west* region
+
+[mail.outbound]
+operators = ["hiring@example.com"]
+allow_domains = ["example.com"]
+dry_run = true

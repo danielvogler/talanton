@@ -1,0 +1,76 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica /Encoding /WinAnsiEncoding >>
+endobj
+2 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold /Encoding /WinAnsiEncoding >>
+endobj
+3 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Oblique /Encoding /WinAnsiEncoding >>
+endobj
+4 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Times-Roman /Encoding /WinAnsiEncoding >>
+endobj
+5 0 obj
+<< /Length 1972 >>
+stream
+BT /b 20 Tf 56 768 Td (Mateo Fernandez) Tj ET
+BT /r 9.5 Tf 56 753 Td (Barcelona, Spain  |  mateo.fernandez@example.test  |  EU citizen) Tj ET
+BT /i 9 Tf 56 741 Td (Open to relocation to Switzerland. No permit yet; EU/EFTA route applies.) Tj ET
+BT /b 9 Tf 56 715 Td (EXPERIENCE) Tj ET
+q 0.7 G 0.6 w 56 711 m 539 711 l S Q
+BT /b 9 Tf 56 697 Td ('21–now) Tj ET
+BT /b 10 Tf 118 697 Td (Backend Lead, Invented Marketplace SL) Tj ET
+BT /r 9.5 Tf 118 684 Td (Lead four engineers on the order and payments services. Took checkout) Tj ET
+BT /r 9.5 Tf 118 672 Td (availability from 99.2% to 99.95% over a year by fixing retries and) Tj ET
+BT /r 9.5 Tf 118 660 Td (isolating the payment provider behind a circuit breaker.) Tj ET
+BT /b 9 Tf 56 637 Td ('18–'21) Tj ET
+BT /b 10 Tf 118 637 Td (Senior Backend Engineer, Invented Travel SA) Tj ET
+BT /r 9.5 Tf 118 624 Td (Search and availability APIs in Python and Go. Owned the caching layer.) Tj ET
+BT /b 9 Tf 56 601 Td ('15–'18) Tj ET
+BT /b 10 Tf 118 601 Td (Backend Engineer, Invented Studio) Tj ET
+BT /r 9.5 Tf 118 588 Td (Django services for client products.) Tj ET
+BT /b 9 Tf 56 565 Td (SELECTED PROJECTS) Tj ET
+q 0.7 G 0.6 w 56 561 m 539 561 l S Q
+BT /b 9.5 Tf 56 547 Td (openapi-diff) Tj ET
+BT /r 9.5 Tf 146 547 Td (CLI that fails CI on a breaking API change. 900 stars.) Tj ET
+BT /b 9.5 Tf 56 534 Td (pg-partition) Tj ET
+BT /r 9.5 Tf 146 534 Td (Postgres partition manager used at two former employers.) Tj ET
+BT /b 9 Tf 56 507 Td (SKILLS) Tj ET
+BT /b 9 Tf 336 507 Td (EDUCATION) Tj ET
+q 0.7 G 0.6 w 56 503 m 306 503 l S Q
+q 0.7 G 0.6 w 336 503 m 539 503 l S Q
+BT /r 9 Tf 56 490 Td (Python, Go, TypeScript) Tj ET
+BT /r 9 Tf 336 490 Td (BSc Computer Science) Tj ET
+BT /r 9 Tf 56 478 Td (Postgres, Redis, Kafka) Tj ET
+BT /r 9 Tf 336 478 Td (Invented University, 2015) Tj ET
+BT /r 9 Tf 56 466 Td (AWS, Docker, CI/CD) Tj ET
+BT /r 9 Tf 56 454 Td (Spanish native, English fluent) Tj ET
+BT /r 9 Tf 336 454 Td (German A1, learning) Tj ET
+endstream
+endobj
+6 0 obj
+<< /Type /Page /Parent 7 0 R /MediaBox [0 0 595 842] /Resources << /Font << /r 1 0 R /b 2 0 R /i 3 0 R /s 4 0 R >> >> /Contents 5 0 R >>
+endobj
+7 0 obj
+<< /Type /Pages /Kids [6 0 R] /Count 1 >>
+endobj
+8 0 obj
+<< /Type /Catalog /Pages 7 0 R >>
+endobj
+xref
+0 9
+0000000000 65535 f 
+0000000009 00000 n 
+0000000106 00000 n 
+0000000208 00000 n 
+0000000313 00000 n 
+0000000412 00000 n 
+0000002436 00000 n 
+0000002588 00000 n 
+0000002645 00000 n 
+trailer
+<< /Size 9 /Root 8 0 R >>
+startxref
+2694
+%%EOF

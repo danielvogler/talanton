@@ -1,0 +1,39 @@
+name: check
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      # Pinned to a commit, not a tag: a tag can be moved onto other code.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          enable-cache: true
+      - run: uv sync --extra dev --extra gdrive --extra gcs
+
+      # The same hooks that run on commit, so `--no-verify` cannot get past
+      # them. AGENTS.md said this already happened; now it does.
+      - name: hooks
+        run: uv run pre-commit run --all-files --show-diff-on-failure
+
+      - name: types
+        run: uv run mypy
+
+      - name: tests
+        run: uv run pytest -q
+
+      - name: the engine's own defaults still load and resolve
+        run: uv run talanton check
+
+      # The example is a real, runnable deployment against invented CVs. If it
+      # stops checking out, the first thing anybody tries is broken.
+      - name: the example deployment checks out and renders its ads
+        run: |
+          uv run talanton --config example/talanton.toml check
+          uv run talanton --config example/talanton.toml status
+          uv run talanton --config example/talanton.toml ads ai-engineer > /dev/null
