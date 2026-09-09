@@ -286,7 +286,10 @@ could not read a CV.
 
 **What leaves names nobody.** The shortlist carries candidate ids and CV links.
 A summary that names someone is refused by the tool — the check runs against
-names the screener actually extracted, so it cannot be talked out of a real one.
+every name the screener recorded, accents folded and spellings run together, so
+it cannot be talked out of one it holds. It is a backstop rather than a proof:
+a name the screener never extracted is not in there to look for, which is why
+identity lives behind the CV link and folder access, not behind this check.
 
 **A candidate cannot be mailed at all.** There is no tool that reaches one —
 not a restricted one, none. The single sending tool takes no recipient

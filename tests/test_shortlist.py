@@ -266,3 +266,27 @@ def _event(response: dict):
             parts=[types.Part(function_response=types.FunctionResponse(name="send_digest", response=response))],
         )
     )
+
+
+def test_an_umlaut_spelled_out_is_still_the_same_person(assessed, position, sent):
+    """A CV that says Müller and a summary that says Mueller name one
+    candidate. Folding alone turns the first into "muller"."""
+    cid = assessed(facts={"name": "Anna Müller"})
+    assert tools.send_digest(OPENING, "Mueller is the strongest by far.", [cid])["sent"] is False
+    assert tools.send_digest(OPENING, "Muller is the strongest by far.", [cid])["sent"] is False
+    assert sent == []
+
+
+def test_a_name_run_together_is_refused(assessed, position, sent):
+    """ "MarcoRossi" is one word to a regex and two to whoever reads the mail."""
+    cid = assessed(facts={"name": "Marco Rossi"})
+    assert tools.send_digest(OPENING, "MarcoRossi is worth a call.", [cid])["sent"] is False
+    assert sent == []
+
+
+def test_an_unrecorded_name_leaves_the_word_unknown_sayable(assessed, position, sent):
+    """ "unknown" is the schema's word for what the CV did not say. Guarding on
+    it would refuse the digest that exists to report what is not yet known."""
+    cid = assessed(facts={"name": "unknown", "email": "unknown"})
+    result = tools.send_digest(OPENING, f"{cid} is strong; work permit unknown.", [cid])
+    assert result["sent"] is True, result.get("reason")
