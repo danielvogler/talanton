@@ -223,6 +223,7 @@ def fetch() -> list[str]:
             msg = email.message_from_bytes(message["raw"])
             opening = opening_for(message)
             found = False
+            oversize = False
 
             for filename, payload in attachments(msg):
                 if not filename.lower().endswith(DOCUMENT_SUFFIXES):
@@ -237,9 +238,22 @@ def fetch() -> list[str]:
                         len(payload) / 1024 / 1024,
                         limits.max_attachment_mb,
                     )
+                    oversize = True
                     continue
                 written.append(store.write_cv(cv_filename(message["sender"], filename), payload, opening).name)
                 found = True
+
+            if not found and oversize:
+                # The body fallback exists for an application written in the
+                # mail itself. Reaching it here would file a covering note as
+                # the CV and mark the message read, and the actual CV — the one
+                # thing this person sent — would be gone without anyone seeing
+                # it. Left unread instead, for a person to ask for a smaller file.
+                logging.warning(
+                    "Nothing written for %s: their CV was over the ceiling and the mail is left unread",
+                    message["sender"],
+                )
+                continue
 
             if not found:
                 # A body-only application is still an application.

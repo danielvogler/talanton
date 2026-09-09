@@ -169,3 +169,25 @@ def test_no_delivered_to_says_so_in_the_log(position, monkeypatch, caplog):
     with caplog.at_level(logging.WARNING):
         _filed(_application({"To": "ai-engineer@example.com"}), monkeypatch)
     assert "No Delivered-To" in caplog.text
+
+
+def test_an_oversized_cv_does_not_become_its_covering_note(configure, position, monkeypatch, caplog):
+    """The body fallback is for an application written in the mail itself.
+    Used here it would file the covering note as the CV, mark the message read,
+    and lose the one thing this person actually sent."""
+    import logging
+
+    from talanton import config
+
+    configure(inbound=config.Inbound(user="apply@example.com", password="x", max_attachment_mb=1))
+
+    msg = EmailMessage()
+    msg["From"], msg["Subject"] = "anna@example.test", "Application"
+    msg["Delivered-To"] = "ai-engineer@example.com"
+    msg.set_content(LONG)  # a full covering letter, long enough to pass as a CV
+    msg.add_attachment(b"x" * (2 * 1024 * 1024), maintype="text", subtype="plain", filename="cv.txt")
+
+    monkeypatch.setattr(inbound, "client", lambda: _FakeSession([msg.as_bytes()]))
+    with caplog.at_level(logging.WARNING):
+        assert inbound.fetch() == []
+    assert "left unread" in caplog.text
