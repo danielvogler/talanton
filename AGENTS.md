@@ -177,7 +177,8 @@ uv add "talanton @ git+https://github.com/danielvogler/talanton"
 uv run talanton init --company "Their Name" --domain their-domain.com
 export TALANTON_CONFIG=hiring/talanton.toml
 uv run talanton check
-# Add extras only if they need them: [gdrive] for Drive, [gcs] for a bucket.
+# Add extras only if they need them: [gdrive] for Drive, [gcs] for a bucket,
+# [anthropic] if screening.model is a Claude id rather than a Gemini one.
 # uv add "talanton[gdrive,gcs] @ git+https://github.com/danielvogler/talanton"
 
 # If this repository is private, HTTPS will not authenticate. Use SSH instead:

@@ -2396,7 +2396,6 @@ name = "talanton"
 version = "0.6.0"
 source = { editable = "." }
 dependencies = [
-    { name = "anthropic", extra = ["vertex"] },
     { name = "defusedxml" },
     { name = "google-adk" },
     { name = "imapclient" },
@@ -2405,6 +2404,9 @@ dependencies = [
 ]
 
 [package.optional-dependencies]
+anthropic = [
+    { name = "anthropic", extra = ["vertex"] },
+]
 dev = [
     { name = "mypy" },
     { name = "pre-commit" },
@@ -2425,7 +2427,7 @@ secrets = [
 
 [package.metadata]
 requires-dist = [
-    { name = "anthropic", extras = ["vertex"], specifier = ">=0.60" },
+    { name = "anthropic", extras = ["vertex"], marker = "extra == 'anthropic'", specifier = ">=0.60" },
     { name = "defusedxml", specifier = ">=0.7" },
     { name = "google-adk", specifier = ">=2.0,<3" },
     { name = "google-api-python-client", marker = "extra == 'gdrive'", specifier = ">=2.140" },
@@ -2441,7 +2443,7 @@ requires-dist = [
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.8" },
     { name = "types-pyyaml", marker = "extra == 'dev'" },
 ]
-provides-extras = ["dev", "gdrive", "gcs", "secrets"]
+provides-extras = ["dev", "gdrive", "gcs", "secrets", "anthropic"]
 
 [[package]]
 name = "tenacity"

@@ -13,7 +13,6 @@ dependencies = [
     # A .docx and an .odt are XML written by a stranger, and `xml.etree` expands
     # entities. Pure Python, no dependencies of its own.
     "defusedxml>=0.7",
-    "anthropic[vertex]>=0.60",
     "imapclient>=3.0",
     "pypdf>=5.0",
     "pyyaml>=6.0",
@@ -31,6 +30,9 @@ gdrive = ["google-api-python-client>=2.140", "google-auth>=2.30"]
 gcs = ["google-cloud-storage>=2.18"]
 # Only needed when a mailbox password lives in Secret Manager rather than .env.
 secrets = ["google-cloud-secret-manager>=2.20"]
+# Only needed when screening.model is a Claude id. ADK registers `claude-*` and
+# imports this package to serve it; nothing here imports it directly.
+anthropic = ["anthropic[vertex]>=0.60"]
 
 [build-system]
 requires = ["hatchling"]

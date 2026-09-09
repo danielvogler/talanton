@@ -109,17 +109,6 @@ def unassessed(opening: str) -> list[locations.Item]:
     return [item for item in store.list_cvs(opening) if store.candidate_id(item.name) not in done]
 
 
-def _position(opening: str) -> dict[str, Any]:
-    try:
-        return positions.resolve(opening)
-    except (FileNotFoundError, positions.PositionError, positions.AmbiguousOpeningError):
-        return {}
-
-
-def _excluded(assessment: dict, opening: str) -> tuple[str, ...]:
-    return screening.exclusions(assessment, _position(opening or assessment.get("opening", "")))
-
-
 def get_position(opening: str) -> dict:
     """The position file for one opening: ad copy, knockouts and the rubric.
 
@@ -301,10 +290,14 @@ def list_candidates(opening: str, min_score: float = -1.0) -> dict:
         opening: The opening number, e.g. "123", or its full slug.
         min_score: Optional extra minimum, on top of the position's own floor.
     """
-    slug = positions.slug(positions.resolve(opening))
+    # Resolved once, not once per candidate. `positions.resolve` reads the
+    # openings location, and three lookups per row is three round trips per row
+    # on Drive — a screening run makes a lot of rows.
+    position = positions.resolve(opening)
+    slug = positions.slug(position)
     rows = []
     for candidate, assessment in store.load_assessments(slug).items():
-        if _excluded(assessment, slug):
+        if screening.exclusions(assessment, position):
             continue
         score = assessment.get("overall")
         if min_score >= 0 and (score is None or score < min_score):
@@ -314,8 +307,8 @@ def list_candidates(opening: str, min_score: float = -1.0) -> dict:
                 "candidate": candidate,
                 "score": score,
                 "gaps": sorted(missing_facts(assessment)),
-                "unanswered_knockouts": list(screening.unanswered(assessment, _position(slug))),
-                "unscored_dimensions": list(screening.unscored(assessment, _position(slug))),
+                "unanswered_knockouts": list(screening.unanswered(assessment, position)),
+                "unscored_dimensions": list(screening.unscored(assessment, position)),
                 "flags": _fence_value(assessment.get("flags") or []),
                 "justification": _fence_value(assessment.get("justification", "")),
             }
@@ -334,11 +327,12 @@ def list_excluded(opening: str) -> dict:
     Args:
         opening: The opening number, e.g. "123", or its full slug.
     """
-    slug = positions.slug(positions.resolve(opening))
+    position = positions.resolve(opening)
+    slug = positions.slug(position)
     rows = [
         {"candidate": candidate, "reasons": list(reasons)}
         for candidate, assessment in store.load_assessments(slug).items()
-        if (reasons := _excluded(assessment, slug))
+        if (reasons := screening.exclusions(assessment, position))
     ]
     return {"opening": slug, "excluded": rows, "count": len(rows)}
 
@@ -350,11 +344,12 @@ def get_candidate(opening: str, candidate: str) -> dict:
         opening: The opening number, e.g. "123", or its full slug.
         candidate: The candidate id.
     """
-    slug = positions.slug(positions.resolve(opening))
+    position = positions.resolve(opening)
+    slug = positions.slug(position)
     assessment = store.assessment(candidate, slug)
     if not assessment:
         return {"error": f"no assessment for {candidate} in opening {slug}"}
-    if reasons := _excluded(assessment, slug):
+    if reasons := screening.exclusions(assessment, position):
         return {
             "excluded": True,
             "reasons": list(reasons),
@@ -382,7 +377,8 @@ def pool_counts(opening: str) -> dict:
     Args:
         opening: The opening number, e.g. "123", or its full slug.
     """
-    slug = positions.slug(positions.resolve(opening))
+    position = positions.resolve(opening)
+    slug = positions.slug(position)
     assessments = store.load_assessments(slug)
     seen = store.last_reported(slug)
     here = _candidates(slug)
@@ -391,7 +387,7 @@ def pool_counts(opening: str) -> dict:
         "new": len(here - seen) if seen else 0,
         "first_report": not seen,
         "assessed": len(assessments),
-        "excluded": len([c for c, a in assessments.items() if _excluded(a, slug)]),
+        "excluded": len([a for a in assessments.values() if screening.exclusions(a, position)]),
         "unassessed": len(unassessed(slug)),
     }
 
@@ -454,7 +450,7 @@ def send_digest(opening: str, summary: str, candidates: list[str]) -> dict:
     except outbound.NotAllowedError as exc:
         return {"sent": False, "reason": str(exc)}
 
-    links, refused = _cv_links(candidates, slug)
+    links, refused = _cv_links(candidates, position)
     body = f"{summary.rstrip()}\n\n{_counts_line(slug)}" + _link_block(links)
 
     # The whole body, not only the prose. A CV stored under the name its sender
@@ -535,9 +531,9 @@ def _word_in(name: str, lowered: str) -> bool:
     )
 
 
-def _cv_links(candidates: list[str], opening: str) -> tuple[list[tuple[str, str]], list[dict[str, str]]]:
+def _cv_links(candidates: list[str], position: dict) -> tuple[list[tuple[str, str]], list[dict[str, str]]]:
     """The CV link for each candidate, refusing any the filter excluded."""
-    everything = store.load_assessments(opening)
+    everything = store.load_assessments(positions.slug(position))
     links: list[tuple[str, str]] = []
     refused: list[dict[str, str]] = []
 
@@ -546,7 +542,7 @@ def _cv_links(candidates: list[str], opening: str) -> tuple[list[tuple[str, str]
         if not assessment:
             refused.append({"candidate": candidate, "reason": "no assessment on file"})
             continue
-        if _excluded(assessment, opening):
+        if screening.exclusions(assessment, position):
             refused.append({"candidate": candidate, "reason": "excluded by a knockout; nothing sent"})
             continue
         uri = assessment.get("cv_uri")

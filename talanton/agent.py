@@ -209,9 +209,10 @@ root_agent = LlmAgent(
 assessor = LlmAgent(
     name="assessor",
     model=current().screening.model,
-    instruction=ROOT_INSTRUCTION_TEMPLATE.format(
-        company=current().company.name, description=current().company.description
-    )
+    # The same instruction, from the same function. Formatting the template a
+    # second time here let the two drift: a line added to what the root agent
+    # is told did not reach the deployment that runs unattended.
+    instruction=root_instruction()
     + "\n\nYou cannot send anything, and there is no agent here that can. When you are "
     "done, say what you assessed and what it came to. Somebody will read it where it "
     "was written.",
