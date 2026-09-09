@@ -10,6 +10,9 @@ dependencies = [
     # >=2.0, not >=1.0: `google.adk.apps.App` and `InMemoryRunner(app=...)` do not
     # exist before 1.14, and 2.x is the only line CI actually resolves against.
     "google-adk>=2.0,<3",
+    # A .docx and an .odt are XML written by a stranger, and `xml.etree` expands
+    # entities. Pure Python, no dependencies of its own.
+    "defusedxml>=0.7",
     "anthropic[vertex]>=0.60",
     "imapclient>=3.0",
     "pypdf>=5.0",
@@ -82,6 +85,7 @@ disallow_untyped_defs = false
 # Google's client libraries and ADK ship no usable stubs.
 [[tool.mypy.overrides]]
 module = [
+    "defusedxml.*",
     "google.*",
     "google.cloud.*",
     "google_auth_httplib2.*",

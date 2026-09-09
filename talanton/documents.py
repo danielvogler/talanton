@@ -17,15 +17,24 @@ listed, the reason is recorded, and a person is told — silently scoring someon
 badly because their PDF was a scan would be the worst failure this system could
 have.
 
-Everything here parses files written by strangers, so it is defensive: archives
-are checked against a decompression bomb before they are read.
+Everything here parses files written by strangers, so it is defensive: there is
+a ceiling on the file, a ceiling on the pages, archives are checked against a
+decompression bomb, and the XML is parsed by something that refuses a DTD.
+
+The mail path already caps what it will write, but a CV can also be dropped
+into the folder by hand or by whatever fills it upstream, and that path has no
+mailbox in front of it. The ceilings live here so both are covered.
 """
 
 import io
+import itertools
 import logging
 import re
 import xml.etree.ElementTree as ElementTree
 import zipfile
+
+import defusedxml.ElementTree
+from defusedxml.common import DefusedXmlException
 
 PDF_SUFFIXES = (".pdf",)
 TEXT_SUFFIXES = (".txt", ".md", ".markdown")
@@ -41,6 +50,13 @@ MIN_USEFUL_CHARS = 120
 # A CV is a few hundred kilobytes. An archive claiming to expand to more than
 # this is a decompression bomb, not an application.
 MAX_UNCOMPRESSED_BYTES = 64 * 1024 * 1024
+# The same ceiling the mailbox applies, applied again here. A file dropped into
+# the CVs folder by hand never went past the mailbox at all.
+MAX_DOCUMENT_BYTES = 20 * 1024 * 1024
+# Nobody's CV is longer than this, and pypdf has had more than one CPU
+# exhaustion report on crafted files. Reading twenty pages costs a bounded
+# amount whatever the file claims about itself.
+MAX_PDF_PAGES = 20
 
 WORD_NS = "http://schemas.openxmlformats.org/wordprocessingml/2006/main"
 ODF_TEXT_NS = "urn:oasis:names:tc:opendocument:xmlns:text:1.0"
@@ -69,6 +85,12 @@ def extract(filename: str, payload: bytes) -> str:
     """
     lowered = filename.lower()
 
+    if len(payload) > MAX_DOCUMENT_BYTES:
+        raise UnreadableError(
+            f"{filename}: {len(payload) / 1024 / 1024:.1f} MB is larger than any CV needs to be "
+            f"(the ceiling is {MAX_DOCUMENT_BYTES // 1024 // 1024} MB). Nothing was read from it. "
+            "Ask for a smaller file."
+        )
     if lowered.endswith(LEGACY_SUFFIXES):
         raise UnreadableError(
             f"{filename}: .doc is the legacy binary Word format and cannot be read here. "
@@ -109,7 +131,10 @@ def _pdf(filename: str, payload: bytes) -> str:
 
     try:
         reader = PdfReader(io.BytesIO(payload))
-        return "\n".join(page.extract_text() or "" for page in reader.pages)
+        pages = list(itertools.islice(reader.pages, MAX_PDF_PAGES))
+        if len(reader.pages) > MAX_PDF_PAGES:
+            logging.warning("%s has %d pages; read the first %d", filename, len(reader.pages), MAX_PDF_PAGES)
+        return "\n".join(page.extract_text() or "" for page in pages)
     except Exception as exc:
         logging.warning("Could not read %s: %s", filename, exc)
         raise UnreadableError(f"{filename}: the PDF could not be parsed ({exc})") from exc
@@ -166,8 +191,20 @@ def _odt(filename: str, payload: bytes) -> str:
 
 
 def _parse(filename: str, xml: bytes) -> ElementTree.Element:
+    """Parses one document's XML, refusing anything that declares entities.
+
+    `xml.etree` expands internal entities, so ten nested ones expand a
+    kilobyte into a gigabyte inside the parser, where the archive ceiling above
+    cannot see it. A .docx or .odt written by a word processor has no DTD at
+    all, so refusing one costs a real applicant nothing.
+    """
     try:
-        return ElementTree.fromstring(xml)
+        return defusedxml.ElementTree.fromstring(xml)
+    except DefusedXmlException as exc:
+        raise UnreadableError(
+            f"{filename}: this document declares XML entities, which a CV has no use for and "
+            f"which cost more to expand than to write ({exc})."
+        ) from exc
     except ElementTree.ParseError as exc:
         raise UnreadableError(f"{filename}: the document's XML is malformed ({exc})") from exc
 
