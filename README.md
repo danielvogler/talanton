@@ -52,7 +52,7 @@ file that is not a CV at all:
 ```bash
 uv run talanton --config example/talanton.toml status   # no credentials needed
 uv run talanton --config example/talanton.toml assess ai-engineer
-uv run talanton --config example/talanton.toml show 101 c-fa22dc05
+uv run talanton --config example/talanton.toml show 101 c-fa22dc05a62b00e4
 ```
 
 Only `assess` needs Vertex. `status`, `show`, `ads` and `check` run on nothing
