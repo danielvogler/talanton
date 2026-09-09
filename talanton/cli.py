@@ -133,6 +133,12 @@ def _check_sending(active: config.Config) -> bool:
         return True
 
     print("warn  dry run is OFF — the shortlist will really be sent")
+    # Named, not counted. The allowlist matches a domain, so a typo at a
+    # permitted domain passes every check here and is still somebody who gets
+    # candidate links. The only thing that catches it is a person reading the
+    # addresses before the first real run.
+    for address in outbound.operators:
+        print(f"      shortlists will go to {address} — read that address, not the count")
     ok = True
 
     if not _outbound_password_reachable():

@@ -425,6 +425,14 @@ Add `$SA` to the shared drive as a member. That membership is the access
 control, both ways of running are the same identity, and nothing depends on any
 one person's browser session. [`AGENTS.md`](AGENTS.md) has the full setup.
 
+**That membership is the only boundary, so give it nothing else.** The token is
+issued for `https://www.googleapis.com/auth/drive` — the broad scope, because
+`drive.file` cannot see a folder it did not create, as above. It reaches
+everything the service account is a member of, so the service account must be a
+member of the recruiting drive and of nothing else: no personal folder shared
+with it "just to test", no second project's bucket of documents. Make one
+account per deployment and keep it that way.
+
 You do not have to dig the folder id out of a browser URL. Give the path:
 
 ```bash
