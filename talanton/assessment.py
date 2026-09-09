@@ -28,6 +28,12 @@ Verdict = Literal["pass", "fail", "unknown"]
 
 UNKNOWN = "unknown"
 
+# The justification is two to four sentences written from a stranger's CV. A
+# ceiling here rather than in the schema: `max_length` would have to survive
+# every model's structured-output implementation, and a screener that ignored
+# it would fail the call instead of the field. Truncating is the guarantee.
+MAX_JUSTIFICATION_CHARS = 1200
+
 
 class DimensionScore(BaseModel):
     """One rubric dimension, scored."""
@@ -131,6 +137,9 @@ def normalise(assessment: dict) -> dict:
     Everything else here, and every assessment already written, reads maps
     keyed by rubric id. This is the one place the two meet, so it accepts
     either and always returns the map form.
+
+    Also the one place the justification is bounded. A CV can ask the screener
+    for an essay, and that essay is what an operator ends up reading.
     """
     out = dict(assessment)
     for field, value_key in (("dimensions", "score"), ("knockouts", "verdict")):
@@ -141,4 +150,7 @@ def normalise(assessment: dict) -> dict:
                 for e in entries
                 if isinstance(e, dict) and e.get("id") is not None and value_key in e
             }
+    justification = out.get("justification")
+    if isinstance(justification, str) and len(justification) > MAX_JUSTIFICATION_CHARS:
+        out["justification"] = justification[:MAX_JUSTIFICATION_CHARS].rstrip() + "…"
     return out

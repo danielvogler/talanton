@@ -62,6 +62,42 @@ def fence(text: str) -> str:
     return f"{FENCE_OPEN} {nonce} >>>\n{inner}\n{FENCE_CLOSE} {nonce} >>>"
 
 
+# What the screener writes is applicant text once removed: a CV can ask for a
+# sentence and the screener, doing as it is told, records that the attempt was
+# made and writes the sentence anyway. Fenced here, so the agent that CAN
+# delegate to the correspondent reads it as data rather than as its own tool
+# talking. `flags` is included because a flag is free text too.
+DERIVED_PROSE = ("justification", "flags", "probe")
+
+
+def _fence_value(value: Any) -> Any:
+    """Fences a string, or every string in a list. Leaves anything else.
+
+    An empty string is left alone: there is nothing in it to quote, and a bare
+    pair of markers reads as though something was withheld.
+    """
+    if isinstance(value, str):
+        return fence(value) if value.strip() else value
+    if isinstance(value, list):
+        return [fence(v) if isinstance(v, str) else v for v in value]
+    return value
+
+
+def _fenced(assessment: dict) -> dict:
+    """One assessment with every applicant-derived field fenced.
+
+    Facts are fenced too, because a name is whatever the CV wrote in the place
+    a name goes. Listings fence only the prose: a fence costs a hundred
+    characters, and paying that per fact per candidate would crowd out the
+    pool it is describing.
+    """
+    out = {**assessment, **{f: _fence_value(assessment[f]) for f in DERIVED_PROSE if f in assessment}}
+    facts = assessment.get("facts")
+    if isinstance(facts, dict):
+        out["facts"] = {k: _fence_value(v) for k, v in facts.items()}
+    return out
+
+
 def unassessed(opening: str) -> list[locations.Item]:
     """The CVs in one opening with no assessment yet.
 
@@ -280,8 +316,8 @@ def list_candidates(opening: str, min_score: float = -1.0) -> dict:
                 "gaps": sorted(missing_facts(assessment)),
                 "unanswered_knockouts": list(screening.unanswered(assessment, _position(slug))),
                 "unscored_dimensions": list(screening.unscored(assessment, _position(slug))),
-                "flags": assessment.get("flags") or [],
-                "justification": assessment.get("justification", ""),
+                "flags": _fence_value(assessment.get("flags") or []),
+                "justification": _fence_value(assessment.get("justification", "")),
             }
         )
     return {
@@ -324,7 +360,7 @@ def get_candidate(opening: str, candidate: str) -> dict:
             "reasons": list(reasons),
             "note": "This candidate did not clear a knockout. They do not go in a shortlist.",
         }
-    return {"assessment": assessment}
+    return {"assessment": _fenced(assessment)}
 
 
 def missing_facts(assessment: dict) -> set[str]:
