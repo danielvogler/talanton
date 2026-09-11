@@ -234,3 +234,61 @@ def test_an_ordinary_document_still_opens():
     with zipfile.ZipFile(buffer, "w") as archive:
         archive.writestr("word/document.xml", b"<w:document>hello</w:document>")
     assert b"hello" in documents._open_archive("cv.docx", buffer.getvalue(), "word/document.xml")
+
+
+def test_a_file_larger_than_any_cv_is_refused_before_it_is_parsed():
+    """`max_attachment_mb` guards the mailbox. A file dropped into the CVs
+    folder by hand never went past a mailbox, so the ceiling is here too."""
+    with pytest.raises(documents.UnreadableError, match="larger than any CV"):
+        documents.extract("cv.pdf", b"x" * (documents.MAX_DOCUMENT_BYTES + 1))
+
+
+def test_only_the_first_pages_of_a_pdf_are_read(caplog):
+    """pypdf on a crafted file is where the CPU goes. A CV is not 500 pages."""
+    import io
+    import logging
+
+    from pypdf import PdfWriter
+
+    writer = PdfWriter()
+    for _ in range(documents.MAX_PDF_PAGES + 5):
+        writer.add_blank_page(width=200, height=200)
+    buffer = io.BytesIO()
+    writer.write(buffer)
+
+    with caplog.at_level(logging.WARNING), pytest.raises(documents.UnreadableError):
+        documents.extract("long.pdf", buffer.getvalue())
+    assert f"read the first {documents.MAX_PDF_PAGES}" in caplog.text
+
+
+def _docx_with(document_xml: bytes) -> bytes:
+    import io
+    import zipfile
+
+    buffer = io.BytesIO()
+    with zipfile.ZipFile(buffer, "w", zipfile.ZIP_DEFLATED) as archive:
+        archive.writestr("word/document.xml", document_xml)
+    return buffer.getvalue()
+
+
+def test_a_document_that_declares_entities_is_refused():
+    """`xml.etree` expands them, so ten nested entities expand a kilobyte into
+    a gigabyte inside the parser, where the archive ceiling cannot see it."""
+    bomb = (
+        b'<?xml version="1.0"?><!DOCTYPE d [<!ENTITY a "aaaaaaaaaa">'
+        b'<!ENTITY b "&a;&a;&a;&a;&a;&a;&a;&a;&a;&a;">'
+        b'<!ENTITY c "&b;&b;&b;&b;&b;&b;&b;&b;&b;&b;">]><d>&c;</d>'
+    )
+    with pytest.raises(documents.UnreadableError, match="declares XML entities"):
+        documents.extract("cv.docx", _docx_with(bomb))
+
+
+def test_a_document_with_no_dtd_still_reads():
+    """The refusal above must cost a real applicant nothing."""
+    assert "production Python" in documents.extract("cv.docx", _docx_with(_document_xml()))
+
+
+def _document_xml() -> bytes:
+    ns = 'xmlns:w="http://schemas.openxmlformats.org/wordprocessingml/2006/main"'
+    para = f'<w:p><w:r><w:t xml:space="preserve">{LONG} production Python.</w:t></w:r></w:p>'
+    return f'<?xml version="1.0"?><w:document {ns}><w:body>{para}</w:body></w:document>'.encode()

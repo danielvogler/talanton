@@ -12,6 +12,7 @@ Three things are enforced here rather than left to the model:
 """
 
 import re
+import unicodedata
 import uuid
 from datetime import date, datetime
 from typing import Any
@@ -27,6 +28,11 @@ FENCE_CLOSE = "<<< end untrusted candidate text >>>"
 # Below this, a name part is too common to be an identifier: "Jo" would make
 # "job" unsayable in every summary.
 MIN_IDENTIFIER_LENGTH = 2
+
+# What folding cannot reach: an umlaut written as two letters is a different
+# word to a regex, and it is how half of Switzerland spells its own surname in
+# an email address. `ß` needs no entry — casefold already makes it "ss".
+TRANSLITERATIONS = {"ä": "ae", "ö": "oe", "ü": "ue", "å": "aa", "ø": "oe", "æ": "ae"}
 
 # Facts a CV should establish. Absent ones are reported, not guessed.
 EXPECTED_FACTS = ("work_authorisation", "years_industry", "language", "notice_period")
@@ -62,6 +68,42 @@ def fence(text: str) -> str:
     return f"{FENCE_OPEN} {nonce} >>>\n{inner}\n{FENCE_CLOSE} {nonce} >>>"
 
 
+# What the screener writes is applicant text once removed: a CV can ask for a
+# sentence and the screener, doing as it is told, records that the attempt was
+# made and writes the sentence anyway. Fenced here, so the agent that CAN
+# delegate to the correspondent reads it as data rather than as its own tool
+# talking. `flags` is included because a flag is free text too.
+DERIVED_PROSE = ("justification", "flags", "probe")
+
+
+def _fence_value(value: Any) -> Any:
+    """Fences a string, or every string in a list. Leaves anything else.
+
+    An empty string is left alone: there is nothing in it to quote, and a bare
+    pair of markers reads as though something was withheld.
+    """
+    if isinstance(value, str):
+        return fence(value) if value.strip() else value
+    if isinstance(value, list):
+        return [fence(v) if isinstance(v, str) else v for v in value]
+    return value
+
+
+def _fenced(assessment: dict) -> dict:
+    """One assessment with every applicant-derived field fenced.
+
+    Facts are fenced too, because a name is whatever the CV wrote in the place
+    a name goes. Listings fence only the prose: a fence costs a hundred
+    characters, and paying that per fact per candidate would crowd out the
+    pool it is describing.
+    """
+    out = {**assessment, **{f: _fence_value(assessment[f]) for f in DERIVED_PROSE if f in assessment}}
+    facts = assessment.get("facts")
+    if isinstance(facts, dict):
+        out["facts"] = {k: _fence_value(v) for k, v in facts.items()}
+    return out
+
+
 def unassessed(opening: str) -> list[locations.Item]:
     """The CVs in one opening with no assessment yet.
 
@@ -71,17 +113,6 @@ def unassessed(opening: str) -> list[locations.Item]:
     """
     done = store.assessed_ids(opening)
     return [item for item in store.list_cvs(opening) if store.candidate_id(item.name) not in done]
-
-
-def _position(opening: str) -> dict[str, Any]:
-    try:
-        return positions.resolve(opening)
-    except (FileNotFoundError, positions.PositionError, positions.AmbiguousOpeningError):
-        return {}
-
-
-def _excluded(assessment: dict, opening: str) -> tuple[str, ...]:
-    return screening.exclusions(assessment, _position(opening or assessment.get("opening", "")))
 
 
 def get_position(opening: str) -> dict:
@@ -265,10 +296,14 @@ def list_candidates(opening: str, min_score: float = -1.0) -> dict:
         opening: The opening number, e.g. "123", or its full slug.
         min_score: Optional extra minimum, on top of the position's own floor.
     """
-    slug = positions.slug(positions.resolve(opening))
+    # Resolved once, not once per candidate. `positions.resolve` reads the
+    # openings location, and three lookups per row is three round trips per row
+    # on Drive — a screening run makes a lot of rows.
+    position = positions.resolve(opening)
+    slug = positions.slug(position)
     rows = []
     for candidate, assessment in store.load_assessments(slug).items():
-        if _excluded(assessment, slug):
+        if screening.exclusions(assessment, position):
             continue
         score = assessment.get("overall")
         if min_score >= 0 and (score is None or score < min_score):
@@ -278,10 +313,10 @@ def list_candidates(opening: str, min_score: float = -1.0) -> dict:
                 "candidate": candidate,
                 "score": score,
                 "gaps": sorted(missing_facts(assessment)),
-                "unanswered_knockouts": list(screening.unanswered(assessment, _position(slug))),
-                "unscored_dimensions": list(screening.unscored(assessment, _position(slug))),
-                "flags": assessment.get("flags") or [],
-                "justification": assessment.get("justification", ""),
+                "unanswered_knockouts": list(screening.unanswered(assessment, position)),
+                "unscored_dimensions": list(screening.unscored(assessment, position)),
+                "flags": _fence_value(assessment.get("flags") or []),
+                "justification": _fence_value(assessment.get("justification", "")),
             }
         )
     return {
@@ -298,11 +333,12 @@ def list_excluded(opening: str) -> dict:
     Args:
         opening: The opening number, e.g. "123", or its full slug.
     """
-    slug = positions.slug(positions.resolve(opening))
+    position = positions.resolve(opening)
+    slug = positions.slug(position)
     rows = [
         {"candidate": candidate, "reasons": list(reasons)}
         for candidate, assessment in store.load_assessments(slug).items()
-        if (reasons := _excluded(assessment, slug))
+        if (reasons := screening.exclusions(assessment, position))
     ]
     return {"opening": slug, "excluded": rows, "count": len(rows)}
 
@@ -314,17 +350,18 @@ def get_candidate(opening: str, candidate: str) -> dict:
         opening: The opening number, e.g. "123", or its full slug.
         candidate: The candidate id.
     """
-    slug = positions.slug(positions.resolve(opening))
+    position = positions.resolve(opening)
+    slug = positions.slug(position)
     assessment = store.assessment(candidate, slug)
     if not assessment:
         return {"error": f"no assessment for {candidate} in opening {slug}"}
-    if reasons := _excluded(assessment, slug):
+    if reasons := screening.exclusions(assessment, position):
         return {
             "excluded": True,
             "reasons": list(reasons),
             "note": "This candidate did not clear a knockout. They do not go in a shortlist.",
         }
-    return {"assessment": assessment}
+    return {"assessment": _fenced(assessment)}
 
 
 def missing_facts(assessment: dict) -> set[str]:
@@ -346,7 +383,8 @@ def pool_counts(opening: str) -> dict:
     Args:
         opening: The opening number, e.g. "123", or its full slug.
     """
-    slug = positions.slug(positions.resolve(opening))
+    position = positions.resolve(opening)
+    slug = positions.slug(position)
     assessments = store.load_assessments(slug)
     seen = store.last_reported(slug)
     here = _candidates(slug)
@@ -355,7 +393,7 @@ def pool_counts(opening: str) -> dict:
         "new": len(here - seen) if seen else 0,
         "first_report": not seen,
         "assessed": len(assessments),
-        "excluded": len([c for c, a in assessments.items() if _excluded(a, slug)]),
+        "excluded": len([a for a in assessments.values() if screening.exclusions(a, position)]),
         "unassessed": len(unassessed(slug)),
     }
 
@@ -418,7 +456,7 @@ def send_digest(opening: str, summary: str, candidates: list[str]) -> dict:
     except outbound.NotAllowedError as exc:
         return {"sent": False, "reason": str(exc)}
 
-    links, refused = _cv_links(candidates, slug)
+    links, refused = _cv_links(candidates, position)
     body = f"{summary.rstrip()}\n\n{_counts_line(slug)}" + _link_block(links)
 
     # The whole body, not only the prose. A CV stored under the name its sender
@@ -476,32 +514,65 @@ def _names_in(summary: str, opening: str) -> set[str]:
     words, so a candidate named Ada does not make "adaptive" unsayable, and a
     part shorter than three characters is skipped — guarding on "Jo" would
     refuse every summary containing "job".
+
+    It is a backstop, not a proof. It can only check the names the screener
+    actually recorded: a name that never came out of the CV is not in here to
+    look for, which is why identity lives behind the CV link and not behind
+    this function.
     """
-    lowered = summary.lower()
+    folded = _fold(summary)
     found = set()
     for assessment in store.load_assessments(opening).values():
         facts = assessment.get("facts") or {}
-        name = str(facts.get("name") or "").strip()
-        if name and _word_in(name, lowered):
+        name = _recorded(facts.get("name"))
+        if name and _word_in(name, folded):
             found.add(name)
-        email = str(facts.get("email") or "").strip()
-        if len(email) > MIN_IDENTIFIER_LENGTH and email.lower() in lowered:
+        email = _recorded(facts.get("email"))
+        if len(email) > MIN_IDENTIFIER_LENGTH and _fold(email) in folded:
             found.add(email)
     return found
 
 
-def _word_in(name: str, lowered: str) -> bool:
+def _recorded(value: Any) -> str:
+    """One recorded identifier, or empty if the CV never established it.
+
+    "unknown" is the schema's word for "the document does not say", not a
+    candidate. Guarding on it would make the word unsayable in the digest that
+    exists to report what is not yet known.
+    """
+    text = str(value or "").strip()
+    return "" if text.casefold() == assessment_module.UNKNOWN else text
+
+
+def _fold(text: str) -> str:
+    """Casefolded with accents stripped, so Müller and Muller are one word."""
+    decomposed = unicodedata.normalize("NFKD", text.casefold())
+    return "".join(c for c in decomposed if not unicodedata.combining(c))
+
+
+def _spellings(name: str) -> set[str]:
+    """Every way this name could be written and still name the same person.
+
+    The name closed up, because "MarcoRossi" is one word to a regex and two to
+    a reader. The transliterated spelling, because a CV that says Müller and a
+    summary that says Mueller are talking about one candidate and folding alone
+    turns the first into "muller".
+    """
+    parts = {name, *name.split(), name.replace(" ", "")}
+    lowered = {part.casefold() for part in parts}
+    spelled_out = {"".join(TRANSLITERATIONS.get(c, c) for c in part) for part in lowered}
+    folded = {_fold(part) for part in lowered | spelled_out}
+    return {part for part in folded if len(part) > MIN_IDENTIFIER_LENGTH}
+
+
+def _word_in(name: str, folded: str) -> bool:
     """Whether the name, or any part of it long enough to identify, is used."""
-    parts = [name, *name.split()] if " " in name else [name]
-    return any(
-        len(part) > MIN_IDENTIFIER_LENGTH and re.search(rf"\b{re.escape(part.lower())}\b", lowered)
-        for part in parts
-    )
+    return any(re.search(rf"\b{re.escape(spelling)}\b", folded) for spelling in _spellings(name))
 
 
-def _cv_links(candidates: list[str], opening: str) -> tuple[list[tuple[str, str]], list[dict[str, str]]]:
+def _cv_links(candidates: list[str], position: dict) -> tuple[list[tuple[str, str]], list[dict[str, str]]]:
     """The CV link for each candidate, refusing any the filter excluded."""
-    everything = store.load_assessments(opening)
+    everything = store.load_assessments(positions.slug(position))
     links: list[tuple[str, str]] = []
     refused: list[dict[str, str]] = []
 
@@ -510,7 +581,7 @@ def _cv_links(candidates: list[str], opening: str) -> tuple[list[tuple[str, str]
         if not assessment:
             refused.append({"candidate": candidate, "reason": "no assessment on file"})
             continue
-        if _excluded(assessment, opening):
+        if screening.exclusions(assessment, position):
             refused.append({"candidate": candidate, "reason": "excluded by a knockout; nothing sent"})
             continue
         uri = assessment.get("cv_uri")

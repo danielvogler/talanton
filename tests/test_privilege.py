@@ -218,3 +218,17 @@ def test_the_tool_that_reads_a_cv_returns_no_cv_text(configure, cv, position, mo
     assert "Ten years shipping" not in flat, "applicant prose reached the caller"
     assert result["saved"] is True
     assert result["candidate"] == store.candidate_id("anna.txt")
+
+
+def test_the_assessor_is_told_everything_the_root_agent_is_told():
+    """Two copies of one instruction drift, and the copy that drifts is the one
+    deployed unattended."""
+    from talanton import agent
+
+    # Everything below the first paragraph, which is the only part a company
+    # name reaches. Both agents are built at import, against whatever config
+    # was current then, so the shared text is what can be compared.
+    body = agent.ROOT_INSTRUCTION_TEMPLATE.split("\n\n", 1)[1]
+    assert body in agent.root_agent.instruction
+    assert body in agent.assessor.instruction
+    assert "cannot send anything" in agent.assessor.instruction

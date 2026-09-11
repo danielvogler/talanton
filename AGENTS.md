@@ -177,7 +177,8 @@ uv add "talanton @ git+https://github.com/danielvogler/talanton"
 uv run talanton init --company "Their Name" --domain their-domain.com
 export TALANTON_CONFIG=hiring/talanton.toml
 uv run talanton check
-# Add extras only if they need them: [gdrive] for Drive, [gcs] for a bucket.
+# Add extras only if they need them: [gdrive] for Drive, [gcs] for a bucket,
+# [anthropic] if screening.model is a Claude id rather than a Gemini one.
 # uv add "talanton[gdrive,gcs] @ git+https://github.com/danielvogler/talanton"
 
 # If this repository is private, HTTPS will not authenticate. Use SSH instead:
@@ -431,6 +432,13 @@ change who can see one, on their behalf.**
 If an upload later fails with *File not found* on the folder id, the
 credentials need the wider `https://www.googleapis.com/auth/drive` scope:
 `drive.file` only reaches files this code created.
+
+That scope is the broad one, and talanton asks for it unconditionally. It is
+bounded by membership rather than by the scope string: the token reaches every
+file the service account is a member of. So **the service account must be a
+member of the recruiting shared drive and of nothing else.** Check that before
+you hand it to anybody, and do not add it to a personal folder to debug
+something — make a second account instead.
 
 Fill in the config from the answers above. Secrets do not go in it — the
 mailbox passwords are `$TALANTON_INBOUND_PASSWORD` and

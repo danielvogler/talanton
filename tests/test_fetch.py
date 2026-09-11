@@ -11,6 +11,7 @@ LONG = "Ten years of production Python and distributed systems. " * 5
 def message(sender="anna@example.test", body="Please see attached.", attachment=None):
     msg = EmailMessage()
     msg["From"], msg["To"], msg["Subject"] = sender, "apply@example.com", "Application"
+    msg["Delivered-To"] = "apply@example.com"
     msg.set_content(body)
     if attachment:
         name, content = attachment
@@ -78,6 +79,7 @@ def _message(sender: str, filename: str, payload: bytes) -> bytes:
 
     msg = EmailMessage()
     msg["From"] = sender
+    msg["Delivered-To"] = "ai-engineer@example.com"
     msg["To"] = "ai-engineer@example.com"
     msg["Subject"] = "Application"
     msg.set_content("Please find my CV attached.")
@@ -105,3 +107,87 @@ class _FakeSession:
 
     def logout(self):
         pass
+
+
+def _application(headers: dict[str, str | list[str]]) -> bytes:
+    """One application with whatever headers a test wants to try."""
+    msg = EmailMessage()
+    msg["From"] = "anna@example.test"
+    msg["Subject"] = "Application"
+    for name, value in headers.items():
+        for one in value if isinstance(value, list) else [value]:
+            msg[name] = one
+    msg.set_content("Please find my CV attached.")
+    msg.add_attachment(LONG.encode(), maintype="text", subtype="plain", filename="cv.txt")
+    return msg.as_bytes()
+
+
+def _filed(raw: bytes, monkeypatch) -> list[str]:
+    """Which openings ended up with a CV in them."""
+    monkeypatch.setattr(inbound, "client", lambda: _FakeSession([raw]))
+    inbound.fetch()
+    return [
+        opening
+        for opening in ("101-ai-engineer", "102-data-engineer", inbound.UNSORTED)
+        if store.list_cvs(opening)
+    ]
+
+
+def test_a_sender_cannot_pick_the_opening_with_a_to_header(position, monkeypatch):
+    """The README says nothing a sender writes changes where their application
+    lands. `To` and `Cc` are written by the sender; only delivery decides."""
+    position(opening=102, id="data-engineer", apply_to="data-engineer@example.com")
+    raw = _application(
+        {
+            "Delivered-To": "data-engineer@example.com",
+            "To": "ai-engineer@example.com",
+            "Cc": "ai-engineer@example.com",
+        }
+    )
+    assert _filed(raw, monkeypatch) == ["102-data-engineer"]
+
+
+def test_a_cc_on_its_own_files_under_unsorted(position, monkeypatch):
+    """Nothing vouches for where this was delivered, so a person sorts it."""
+    raw = _application({"Cc": "ai-engineer@example.com", "To": "someone@example.test"})
+    assert _filed(raw, monkeypatch) == [inbound.UNSORTED]
+
+
+def test_a_forged_delivered_to_below_the_real_one_is_ignored(position, monkeypatch):
+    """A sender can put Delivered-To in the message they compose. The
+    delivering server prepends the real one above it, so only the first counts."""
+    position(opening=102, id="data-engineer", apply_to="data-engineer@example.com")
+    raw = _application({"Delivered-To": ["ai-engineer@example.com", "data-engineer@example.com"]})
+    assert _filed(raw, monkeypatch) == ["101-ai-engineer"]
+
+
+def test_no_delivered_to_says_so_in_the_log(position, monkeypatch, caplog):
+    """A provider that adds no Delivered-To sorts nothing, and an operator has
+    to be told that rather than finding an unsorted folder filling up."""
+    import logging
+
+    with caplog.at_level(logging.WARNING):
+        _filed(_application({"To": "ai-engineer@example.com"}), monkeypatch)
+    assert "No Delivered-To" in caplog.text
+
+
+def test_an_oversized_cv_does_not_become_its_covering_note(configure, position, monkeypatch, caplog):
+    """The body fallback is for an application written in the mail itself.
+    Used here it would file the covering note as the CV, mark the message read,
+    and lose the one thing this person actually sent."""
+    import logging
+
+    from talanton import config
+
+    configure(inbound=config.Inbound(user="apply@example.com", password="x", max_attachment_mb=1))
+
+    msg = EmailMessage()
+    msg["From"], msg["Subject"] = "anna@example.test", "Application"
+    msg["Delivered-To"] = "ai-engineer@example.com"
+    msg.set_content(LONG)  # a full covering letter, long enough to pass as a CV
+    msg.add_attachment(b"x" * (2 * 1024 * 1024), maintype="text", subtype="plain", filename="cv.txt")
+
+    monkeypatch.setattr(inbound, "client", lambda: _FakeSession([msg.as_bytes()]))
+    with caplog.at_level(logging.WARNING):
+        assert inbound.fetch() == []
+    assert "left unread" in caplog.text

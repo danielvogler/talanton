@@ -71,6 +71,10 @@ def unread(session: IMAPClient) -> list[dict[str, Any]]:
                 # second time.
                 "raw": raw,
                 "sender": email.utils.parseaddr(str(msg.get("From", "")))[1].lower(),
+                # Two lists, and the difference is the routing decision. One is
+                # what the receiving server recorded, the other is what the
+                # message claims. Only the first sorts anything.
+                "delivered_to": ",".join(delivered_to(msg)),
                 "recipients": ",".join(recipients(msg)),
                 "subject": str(msg.get("Subject", "")),
                 "body": body(msg),
@@ -79,29 +83,63 @@ def unread(session: IMAPClient) -> list[dict[str, Any]]:
     return out
 
 
-def recipients(msg: email.message.Message) -> list[str]:
-    """Every address a message was delivered to, for routing to an opening.
+def delivered_to(msg: email.message.Message) -> list[str]:
+    """The addresses this mailbox was actually delivered at. Routing reads this.
 
-    Delivered-To is checked first: it survives plus-addressing and forwarding,
-    where the To header often does not.
+    `Delivered-To` is added by the receiving server. `To`, `Cc` and usually
+    `X-Original-To` are written by whoever sent the message, so routing on them
+    lets a sender pick their own drawer: Cc the address of the opening they
+    want, mail the one they qualify for, and land in the first.
+
+    Only the first one, and that is the whole point of the header. A sender can
+    put a Delivered-To of their own in the message they compose; the delivering
+    server prepends the real one above it. Reading them all would take the
+    forgery back.
+    """
+    return _addresses([str(msg.get("Delivered-To", ""))])
+
+
+def recipients(msg: email.message.Message) -> list[str]:
+    """Every address the message names, delivery and claim alike.
+
+    Shown to a person by `peek`, and used for nothing else. Anything here that
+    is not also in `delivered_to` is the sender's word for it.
     """
     headers = [str(msg.get(h, "")) for h in ("Delivered-To", "To", "Cc", "X-Original-To")]
+    return _addresses(headers)
+
+
+def _addresses(headers: list[str]) -> list[str]:
     return [address.lower() for _, address in email.utils.getaddresses([h for h in headers if h]) if address]
 
 
 def opening_for(message: dict[str, str]) -> str:
-    """Which opening an application is for, from the address it was sent to.
+    """Which opening an application is for, from where it was delivered.
 
     Each position carries its own `apply_to`, so give every opening an address
     — or one address with a plus tag — and applications sort themselves. Mail
     that matches nothing is filed under `unsorted` for a person to look at,
     never guessed into an opening.
+
+    Only `Delivered-To` sorts. A message without one is a message nobody can
+    vouch for the destination of, so it goes to `unsorted` rather than to
+    whichever opening its own headers ask for.
     """
     routes = {}
     for position in positions.every():
         routes[str(position["apply_to"]).strip().lower()] = positions.slug(position)
 
-    for address in message.get("recipients", "").split(","):
+    delivered = message.get("delivered_to", "")
+    if not delivered.strip():
+        logging.warning(
+            "No Delivered-To on the message from %s; filed under %s. If your provider does not "
+            "add that header, applications will not sort themselves and a person must file them.",
+            message.get("sender", UNKNOWN_SENDER),
+            UNSORTED,
+        )
+        return UNSORTED
+
+    for address in delivered.split(","):
         found = routes.get(address.strip().lower())
         if found:
             return found
@@ -185,6 +223,7 @@ def fetch() -> list[str]:
             msg = email.message_from_bytes(message["raw"])
             opening = opening_for(message)
             found = False
+            oversize = False
 
             for filename, payload in attachments(msg):
                 if not filename.lower().endswith(DOCUMENT_SUFFIXES):
@@ -199,9 +238,22 @@ def fetch() -> list[str]:
                         len(payload) / 1024 / 1024,
                         limits.max_attachment_mb,
                     )
+                    oversize = True
                     continue
                 written.append(store.write_cv(cv_filename(message["sender"], filename), payload, opening).name)
                 found = True
+
+            if not found and oversize:
+                # The body fallback exists for an application written in the
+                # mail itself. Reaching it here would file a covering note as
+                # the CV and mark the message read, and the actual CV — the one
+                # thing this person sent — would be gone without anyone seeing
+                # it. Left unread instead, for a person to ask for a smaller file.
+                logging.warning(
+                    "Nothing written for %s: their CV was over the ceiling and the mail is left unread",
+                    message["sender"],
+                )
+                continue
 
             if not found:
                 # A body-only application is still an application.
