@@ -1,0 +1,67 @@
+name: release
+
+# Publishing is what a tag means. Tag `v0.7.0` on main, and that is the whole
+# release: this builds it, checks the tag against the version in the file, and
+# publishes it to PyPI.
+#
+# Consumers pin talanton in their own uv.lock — the version that screened a
+# candidate is pinned deliberately — so a release is the only way a fix or a
+# feature reaches them. That is why this is automated rather than remembered.
+on:
+  push:
+    tags: ["v*"]
+
+# Nothing here needs write access to the repository. The token that publishes
+# is minted per-run by PyPI from the OIDC claim below, so there is no API token
+# in this repository to leak, rotate or accidentally print.
+permissions:
+  contents: read
+
+jobs:
+  # The same gate main gets, called rather than copied. A tag that cannot pass
+  # check is not a release.
+  check:
+    uses: ./.github/workflows/check.yml
+
+  release:
+    needs: check
+    runs-on: ubuntu-latest
+    # Trusted Publishing: configure this repository, this workflow filename and
+    # this environment name as a publisher on PyPI once, and no secret is ever
+    # stored here. An environment also gives somewhere to require an approval,
+    # if a release should not be one push of a tag.
+    environment:
+      name: pypi
+      url: https://pypi.org/p/talanton
+    permissions:
+      id-token: write # mints the short-lived PyPI token; nothing else uses it
+    steps:
+      # Pinned to a commit, not a tag: a tag can be moved onto other code.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          enable-cache: true
+
+      # A tag is typed by hand and the version lives in a file, so the two can
+      # disagree. Without this, tagging v0.7.0 on a tree that still says 0.6.0
+      # publishes 0.6.0 under a tag claiming otherwise — and a version on PyPI
+      # cannot be replaced, only yanked.
+      - name: the tag and pyproject.toml agree
+        run: |
+          tagged="${GITHUB_REF_NAME#v}"
+          declared="$(python3 -c 'import tomllib, pathlib; print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])')"
+          if [ "$tagged" != "$declared" ]; then
+            echo "::error::tag ${GITHUB_REF_NAME} does not match pyproject.toml version ${declared}"
+            exit 1
+          fi
+          echo "releasing ${declared}"
+
+      - name: build
+        run: uv build
+
+      # The sdist has to be installable on its own: that is what a consumer
+      # resolving from a lock file may actually get.
+      - name: the built artifacts are well-formed
+        run: uvx twine check dist/*
+
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
