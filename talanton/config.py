@@ -25,7 +25,6 @@ DEFAULT_CONFIG_NAME = "talanton.toml"
 DEFAULT_MODEL = "gemini-3.8-flash"
 DEFAULT_MAX_OUTPUT_TOKENS = 8000
 DEFAULT_MAX_EMAILS_PER_RUN = 25
-DEFAULT_REPLY_WITHIN_DAYS = 7
 DEFAULT_MAX_ATTACHMENT_MB = 20
 DEFAULT_IDLE_TIMEOUT_SECONDS = 900
 # Where a published opening goes by default. Deliberately not `openings`:
@@ -44,7 +43,6 @@ class Company:
 
     name: str = "the company"
     description: str = "a company"
-    locale: str = "en"
 
 
 @dataclass(frozen=True)
@@ -112,13 +110,10 @@ class Screening:
     project: str = ""
     location: str = ""
     max_output_tokens: int = DEFAULT_MAX_OUTPUT_TOKENS
-    reply_within_days: int = DEFAULT_REPLY_WITHIN_DAYS
     # The identity to act as, when the ambient one cannot hold Drive scopes.
     # Empty means use application default credentials exactly as found, which
     # is right on a laptop impersonating the account already. See drive.service.
     service_account: str = ""
-    # Applications that match no position's apply address are filed here.
-    default_role: str = ""
 
 
 @dataclass(frozen=True)
@@ -217,7 +212,6 @@ def _company(data: dict[str, Any]) -> Company:
     return Company(
         name=str(section.get("name", Company.name)),
         description=str(section.get("description", Company.description)),
-        locale=str(section.get("locale", Company.locale)),
     )
 
 
@@ -280,8 +274,6 @@ def _screening(data: dict[str, Any]) -> Screening:
         location=str(section.get("location", "")),
         max_output_tokens=int(section.get("max_output_tokens", Screening.max_output_tokens)),
         service_account=str(os.environ.get("TALANTON_SERVICE_ACCOUNT") or section.get("service_account", "")),
-        reply_within_days=int(section.get("reply_within_days", Screening.reply_within_days)),
-        default_role=str(section.get("default_role", "")),
     )
 
 

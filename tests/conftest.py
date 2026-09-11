@@ -155,6 +155,7 @@ def assessed(cv):
         knockouts=None,
         facts=None,
         flags=None,
+        justification="",
         opening=OPENING,
     ):
         cv(name, opening=opening)
@@ -171,6 +172,7 @@ def assessed(cv):
                 "facts": {**FULL_FACTS, **(facts or {})},
                 "knockouts": knockouts or {"work_permit": "pass"},
                 "flags": flags or [],
+                "justification": justification,
             },
             opening,
         )

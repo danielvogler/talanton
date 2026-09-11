@@ -116,8 +116,8 @@ location = "global"
 
 # A stable model, not a preview — a screening standard should not change under
 # you between runs. `gemini-2.5-pro` if you want pro tier; an @-versioned
-# Anthropic id such as claude-opus-4-5@20251101 also works. Not every model is
-# served in every region.
+# Anthropic id such as claude-opus-4-5@20251101 also works — install the
+# [anthropic] extra for that, ADK reaches for the SDK to serve it. Not every
+# model is served in every region.
 model = "gemini-3.8-flash"
 max_output_tokens = 8000
-default_role = "ai-engineer"
