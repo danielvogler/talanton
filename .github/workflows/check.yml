@@ -4,6 +4,9 @@ on:
   push:
     branches: [main]
   pull_request:
+  # So the release workflow can run exactly this, rather than a copy of it
+  # that drifts. Nothing reaches PyPI without passing the same gate main does.
+  workflow_call:
 
 jobs:
   check:

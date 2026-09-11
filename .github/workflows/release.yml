@@ -1,0 +1,108 @@
+name: release
+
+# Publishes to PyPI when a `v*` tag is pushed. Tagging is the whole release.
+#
+# Consumers pin talanton in their own uv.lock — the version that screened a
+# candidate is pinned deliberately — so a release is the only way a fix or a
+# feature reaches them.
+#
+# There is no token anywhere: not in the repository, not in a secret, not on
+# anyone's laptop. PyPI's trusted publishing exchanges this workflow's OIDC
+# identity for a credential that lasts minutes, which is the same reason there
+# is no service-account key file anywhere in this project. Three things are
+# load-bearing rather than decorative, and PyPI matches on all of them: the
+# filename `release.yml`, the `pypi` environment, and `id-token: write`. Rename
+# any of them and the upload fails with a 403 that does not explain itself.
+on:
+  push:
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # The same gate main gets, called rather than copied. A tag that cannot pass
+  # check is not a release.
+  check:
+    uses: ./.github/workflows/check.yml
+
+  # Build and publish are separate jobs on purpose. Only `publish` can mint a
+  # PyPI credential, and all it does is upload files it did not produce; the
+  # build — which runs hatchling and resolves the dependency tree, i.e. other
+  # people's code — never holds one.
+  build:
+    name: build and check the artifacts
+    needs: check
+    runs-on: ubuntu-latest
+    steps:
+      # Pinned to a commit, not a tag: a tag can be moved onto other code.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+        with:
+          enable-cache: true
+
+      # A tag is typed by hand and the version lives in a file, so the two can
+      # disagree. Without this, tagging v0.7.0 on a tree that still says 0.6.0
+      # publishes 0.6.0 under a tag claiming otherwise — and a version on PyPI
+      # cannot be replaced, only yanked.
+      - name: the tag must be the version being published
+        run: |
+          tag="${GITHUB_REF_NAME#v}"
+          version=$(uv run --no-project python -c \
+            'import tomllib,pathlib; print(tomllib.loads(pathlib.Path("pyproject.toml").read_text())["project"]["version"])')
+          if [ "$tag" != "$version" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match pyproject version $version"
+            exit 1
+          fi
+          echo "publishing $version"
+
+      - name: build
+        run: uv build
+
+      - name: the artifacts are well-formed
+        run: uvx twine check dist/*
+
+      # The wheel is what a consumer actually installs, and nothing above
+      # proves it runs — the tests all import from the working tree. Installing
+      # it somewhere clean is the last cheap point at which a packaging mistake
+      # is noticeable: a missing module, or an entry point that does not
+      # resolve, reaches PyPI silently otherwise.
+      - name: the installed wheel runs
+        run: |
+          uv venv /tmp/verify
+          VIRTUAL_ENV=/tmp/verify uv pip install --quiet dist/*.whl
+          /tmp/verify/bin/talanton --help > /dev/null
+          # No talanton.toml on the runner, which `check` handles: it reports on
+          # the defaults and exits 0. Strict on purpose — masking the exit code
+          # would swallow the traceback this step exists to catch.
+          /tmp/verify/bin/talanton check
+          echo "installed wheel runs"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: dist
+          path: dist/
+          if-no-files-found: error
+
+  publish:
+    name: publish to PyPI
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/talanton
+    permissions:
+      id-token: write # the whole mechanism; without it there is no credential
+    steps:
+      - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dist
+          path: dist/
+
+      # `always`, not `automatic`: if trusted publishing is unavailable for any
+      # reason, fail rather than quietly looking for a token that should not
+      # exist.
+      - name: publish
+        run: uv publish --trusted-publishing always
