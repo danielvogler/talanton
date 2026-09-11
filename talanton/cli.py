@@ -45,10 +45,16 @@ def _print(ok: bool, message: str) -> bool:
 
 
 def check_locations() -> bool:
-    """Both locations resolve. A local one is created; a remote one is named."""
+    """Every location resolves. A local one is created; a remote one is named.
+
+    `openings` is optional, so it is checked only when the config asked for
+    it — otherwise checking it would create a directory for a deployment that
+    never wanted one.
+    """
     active = config.current()
     ok = True
-    for label, spec in (("cvs", active.cvs), ("assessments", active.assessments)):
+    optional = (("openings", active.openings),) if active.openings.configured else ()
+    for label, spec in (("cvs", active.cvs), ("assessments", active.assessments), *optional):
         try:
             built = locations.build(spec, active.store)
             # Building only reads the config. Reaching it is the question worth
@@ -691,6 +697,33 @@ def cmd_cycle(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_publish(args: argparse.Namespace) -> int:
+    """Write one opening's ad and rubric where the assessments live."""
+    from . import publish, store
+
+    try:
+        result = publish.publish(args.opening, board=args.board, note=args.note, dry_run=args.dry_run)
+    except (
+        FileNotFoundError,
+        positions.PositionError,
+        positions.AmbiguousOpeningError,
+        publish.PublishError,
+        locations.LocationError,
+    ) as exc:
+        print(f"FAIL  {exc}", file=sys.stderr)
+        return EXIT_FAILURE
+
+    if args.dry_run:
+        print(result.body)
+        print(f"\n-- dry run: would write {result.name}. Nothing was touched.", file=sys.stderr)
+        return 0
+    if result.unchanged:
+        print(f"ok    {result.name} is already up to date")
+        return 0
+    print(f"ok    wrote {result.name} to {store.openings()}")
+    return 0
+
+
 def cmd_drive_folder(args: argparse.Namespace) -> int:
     """Turn a Drive path into the id the config wants."""
     from . import drive
@@ -792,6 +825,13 @@ def build_parser() -> argparse.ArgumentParser:
     cycle.add_argument("--watch", action="store_true", help="stay connected and run on arrival")
     cycle.set_defaults(func=cmd_cycle)
 
+    pub = sub.add_parser("publish", help="write one opening's ad and rubric to the openings location")
+    pub.add_argument("opening", help='an opening number, slug or role id, e.g. "123"')
+    pub.add_argument("--board", default="", help="which board's copy (default: the first configured)")
+    pub.add_argument("--note", default="", help="a provenance line carried into the published file")
+    pub.add_argument("--dry-run", action="store_true", help="print what would be written, touch nothing")
+    pub.set_defaults(func=cmd_publish)
+
     drive = sub.add_parser("drive-folder", help="find a Drive folder's id by path")
     drive.add_argument("path", help='a Drive path, e.g. "hr/recruiting"')
     drive.add_argument("--create", action="store_true", help="create any segment that does not exist")
@@ -803,7 +843,7 @@ def build_parser() -> argparse.ArgumentParser:
     )
     drive.add_argument(
         "--for",
-        choices=("cvs", "assessments"),
+        choices=("cvs", "assessments", "openings"),
         default="cvs",
         help="which location this folder is for (default: cvs)",
     )
