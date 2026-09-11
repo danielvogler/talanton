@@ -113,6 +113,15 @@ def read_cv(item: Item, opening: str = "") -> bytes:
     return cvs(opening).read(item)
 
 
+def openings() -> locations.Location:
+    """Where a published opening is written. Optional, and never read back.
+
+    No per-opening subfolder: one rendered file per opening is the whole
+    contents, and a drawer holding a single sheet helps nobody.
+    """
+    return locations.build(current().openings, current().store)
+
+
 def assessment_name(candidate: str) -> str:
     return f"{candidate}{ASSESSMENT_SUFFIX}"
 

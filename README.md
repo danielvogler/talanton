@@ -394,6 +394,14 @@ keep them beside the CVs or somewhere narrower. **Whichever you choose holds
 candidate data, so it must be private** — gitignore `cvs/` and `assessments/`
 if the repository is read by more people than should see applications.
 
+There is an optional third, `[storage.openings]`. `talanton publish <role>`
+writes that opening's board copy and its rubric there, so somebody reading an
+assessment can see the bar it was scored against without opening the repository
+that holds the position file. It is write-only — the position file stays the
+source of truth, and a published copy is never read back — and re-publishing
+replaces the file rather than leaving two contradictory rubrics side by side.
+Leave the section out and the command is simply unavailable.
+
 Drive auth is application default credentials — which is a lookup order, not a
 synonym for your own gcloud login, and the difference decides whether talanton
 works for one person or for everyone allowed.

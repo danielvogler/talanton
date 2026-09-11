@@ -35,6 +35,20 @@ path = "cvs"
 backend = "local"
 path = "assessments"
 
+# Optional. Where `talanton publish <role>` writes an opening's board copy and
+# its rubric, so whoever reads an assessment can see the bar it was scored
+# against without opening this repository. Leave the section out entirely and
+# `publish` is unavailable and `check` says nothing about it.
+#
+# Note this is NOT `openings/`, which holds the position files themselves. The
+# published copy is derived; the YAML stays the source of truth, and nothing
+# ever reads the published copy back.
+# [storage.openings]
+# backend = "local"
+# path = "published"
+# backend = "gdrive"
+# folder_id = "1AbC..."     # from: talanton drive-folder "hr/recruiting"
+
 # ---------------------------------------------------------------------------
 # Optional: the two mail adapters. They are separate accounts on purpose.
 # ---------------------------------------------------------------------------

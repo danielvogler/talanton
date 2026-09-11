@@ -523,11 +523,12 @@ assess it as written.
 |---|---|
 | `init` | Scaffold config, directories and gitignore. Idempotent, overwrites nothing. |
 | `secret <side>` | Put a mailbox app password into Secret Manager, read from stdin and never echoed. Prints the config line and the IAM grant. *(needs the `[secrets]` extra and a GCP project)* |
-| `check` | Config loads, both locations resolve, openings validate, and a Vertex project and location are set if one is configured. It does not call the model, so a reachable-looking `check` is not proof the model id is served. **Run this first, always.** |
+| `check` | Config loads, the configured locations resolve, openings validate, and a Vertex project and location are set if one is configured. It does not call the model, so a reachable-looking `check` is not proof the model id is served. **Run this first, always.** |
 | `status [role]` | What is in each location: CVs waiting, who is assessed, who the filter held back. |
 | `show <opening> <candidate>` | One assessment in full — score, per-dimension, facts, knockouts, what to ask at a call. The only place a name is printed. |
 | `positions` | List and validate the opening files, and catch two openings sharing a number. |
 | `ads <role>` | Paste-ready board copy for LinkedIn, Indeed and jobs.ch, length-checked. |
+| `publish <role>` | Write the board copy and the rubric into `[storage.openings]`, so whoever reads an assessment can see the bar it was scored against. `--board` picks which board's copy, `--note` adds a provenance line, `--dry-run` shows it without writing. Re-publishing replaces the file rather than adding a second; an unchanged opening is not rewritten at all. Does nothing until `[storage.openings]` is configured. |
 | `drive-folder <path>` | Turn a Drive path into the folder id the config wants. `--create` makes it. *(needs Drive credentials)* |
 
 ### Needs a mailbox

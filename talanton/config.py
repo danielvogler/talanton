@@ -28,6 +28,10 @@ DEFAULT_MAX_EMAILS_PER_RUN = 25
 DEFAULT_REPLY_WITHIN_DAYS = 7
 DEFAULT_MAX_ATTACHMENT_MB = 20
 DEFAULT_IDLE_TIMEOUT_SECONDS = 900
+# Where a published opening goes by default. Deliberately not `openings`:
+# that is `positions.OPENINGS_DIR`, the source of truth, and a rendered copy
+# landing beside the position files would show up in the operator's git status.
+PUBLISHED_DIR = "published"
 
 
 class ConfigError(ValueError):
@@ -127,6 +131,11 @@ class LocationSpec:
     folder: str = ""  # gdrive, as a path like "hr/recruiting"
     bucket: str = ""  # gcs
     prefix: str = ""  # gcs, a prefix inside the bucket
+    # Whether the config file actually asked for this location. Every field
+    # above has a usable default, so without this a section nobody wrote is
+    # indistinguishable from one written out in full — and an optional
+    # location has no way to stay quiet.
+    configured: bool = False
 
 
 @dataclass(frozen=True)
@@ -153,6 +162,9 @@ class Config:
     # The two locations the core runs on. Everything else is an adapter.
     cvs: LocationSpec = field(default_factory=lambda: LocationSpec(path="cvs"))
     assessments: LocationSpec = field(default_factory=lambda: LocationSpec(path="assessments"))
+    # Optional, and write-only: where `publish` puts a rendered opening. Not
+    # `openings`, which is where the position files themselves live.
+    openings: LocationSpec = field(default_factory=lambda: LocationSpec(path=PUBLISHED_DIR))
     company: Company = field(default_factory=Company)
     inbound: Inbound = field(default_factory=Inbound)
     outbound: Outbound = field(default_factory=Outbound)
@@ -280,10 +292,13 @@ def _location(data: dict[str, Any], name: str, default_path: str) -> LocationSpe
     if not isinstance(section, dict):
         raise ConfigError(f"[storage.{name}] must be a table")
 
-    backend = str(os.environ.get(f"TALANTON_{name.upper()}_BACKEND") or section.get("backend", "local"))
+    backend_env = os.environ.get(f"TALANTON_{name.upper()}_BACKEND")
+    path_env = os.environ.get(f"TALANTON_{name.upper()}_PATH")
+    backend = str(backend_env or section.get("backend", "local"))
     return LocationSpec(
+        configured=bool(name in storage or backend_env or path_env),
         backend=backend,
-        path=str(os.environ.get(f"TALANTON_{name.upper()}_PATH") or section.get("path", default_path)),
+        path=str(path_env or section.get("path", default_path)),
         folder_id=str(section.get("folder_id", "")),
         folder=str(section.get("folder", "")),
         bucket=str(section.get("bucket", "")),
@@ -319,6 +334,7 @@ def parse(data: dict[str, Any], base: Path = Path()) -> Config:
         store=(base / Path(str(store))).resolve(),
         cvs=_location(data, "cvs", default_path="cvs"),
         assessments=_location(data, "assessments", default_path="assessments"),
+        openings=_location(data, "openings", default_path=PUBLISHED_DIR),
         company=_company(data),
         inbound=inbound,
         outbound=_outbound(data, inbound),
