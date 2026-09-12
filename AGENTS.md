@@ -614,6 +614,31 @@ uv run pre-commit run --all-files
 Ruff, ruff-format, mypy and gitleaks all run on commit and again in CI, so
 there is no point deferring them. `uv run pytest -q` must pass too.
 
+### Releasing it
+
+Consumers pin talanton in a lockfile of their own, so a release is the only way
+a fix reaches them. **Pushing a `vX.Y.Z` tag is the whole release**: the
+workflow runs the same check gate main gets, builds, verifies the wheel
+installs and runs somewhere clean, uploads to PyPI over trusted publishing, and
+then creates the GitHub release with the changelog section as its notes and the
+built sdist and wheel attached. There is no token to hold anywhere.
+
+Two things must be true before you tag, and the workflow refuses the tag if
+either is not — a version on PyPI can be yanked but never replaced:
+
+1. `version` in `pyproject.toml` is the version you are about to tag.
+2. `CHANGELOG.md` has a `## [X.Y.Z]` section, written for somebody who was not
+   in the room. Rehearse it with `scripts/changelog-section.sh X.Y.Z`, which is
+   the same script that renders the release notes.
+
+```bash
+# on main, tree clean, check green
+git tag -a v0.7.1 -m "v0.7.1" && git push origin v0.7.1
+```
+
+Never move a tag that has been pushed. If a release is wrong, the fix is the
+next version.
+
 ## Rules you do not get to relax
 
 - **The agent never tells a candidate anything about a decision.** No advancing,

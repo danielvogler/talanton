@@ -1,0 +1,41 @@
+---
+# Both ecosystems here exist because this repository pins things by hand, and a
+# hand-written pin is a pin that rots.
+version: 2
+
+updates:
+  # The actions in the workflows are pinned to commit SHAs, which is the right
+  # thing for supply-chain reasons and also the reason nobody would ever notice
+  # a security fix: a SHA never moves. Something has to bring the new one to a
+  # pull request where it can be read.
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions:
+        patterns: ["*"]
+
+  # uv.lock is committed, and consumers pin talanton in a lockfile of their own,
+  # so a dependency only ever moves when somebody moves it. Grouped, because a
+  # lockfile refresh that arrives as eight separate pull requests gets ignored
+  # as eight separate pull requests.
+  - package-ecosystem: uv
+    directory: /
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "chore"
+    groups:
+      dev-dependencies:
+        dependency-type: development
+        patterns: ["*"]
+      runtime-dependencies:
+        dependency-type: production
+        # Minor and patch only. A major bump of the ADK or of a Google client
+        # changes what the pipeline does to candidate data, and that is a change
+        # somebody reads rather than merges.
+        patterns: ["*"]
+        update-types: ["minor", "patch"]

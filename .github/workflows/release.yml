@@ -57,6 +57,13 @@ jobs:
           fi
           echo "publishing $version"
 
+      # A release nobody can read the notes for is half a release, and the
+      # changelog is the only place this project records what changed. The same
+      # script renders those notes into the GitHub release below, so this is not
+      # a separate check that could pass while the notes come out empty.
+      - name: the changelog must have an entry for this version
+        run: scripts/changelog-section.sh "${GITHUB_REF_NAME#v}" > /dev/null
+
       - name: build
         run: uv build
 
@@ -106,3 +113,39 @@ jobs:
       # exist.
       - name: publish
         run: uv publish --trusted-publishing always
+
+  # A tag publishes to PyPI and leaves nothing on GitHub: no notes, no
+  # artifacts, nothing for somebody who arrived at the repository rather than
+  # at the package. This is the other half of the release.
+  #
+  # It runs after `publish` rather than beside it. A GitHub release announcing
+  # a version that never reached PyPI points at nothing anyone can install, and
+  # publishing is the half that cannot be quietly retried.
+  github-release:
+    name: create the GitHub release
+    needs: publish
+    runs-on: ubuntu-latest
+    permissions:
+      # The only job here that can write to the repository, and all it writes
+      # is the release. Every other job stays on the read-only default.
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: dist
+          path: dist/
+
+      # The artifacts attached here are the ones `build` produced and `publish`
+      # uploaded — not a rebuild, which could differ from what is on PyPI.
+      - name: create the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${GITHUB_REF_NAME#v}"
+          scripts/changelog-section.sh "$version" > "$RUNNER_TEMP/notes.md"
+          gh release create "$GITHUB_REF_NAME" \
+            --title "v$version" \
+            --notes-file "$RUNNER_TEMP/notes.md" \
+            --verify-tag \
+            dist/*
