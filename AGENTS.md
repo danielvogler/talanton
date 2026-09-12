@@ -163,13 +163,13 @@ Then ask what is genuinely missing, a few at a time.
 
 ## Then set it up, in their repository
 
-Not on PyPI — it installs from git. Adding it as a dependency puts the version
-they screened people with in a lockfile, which is worth having if anyone ever
-asks how a decision was reached.
+On [PyPI](https://pypi.org/p/talanton). Adding it as a dependency puts the
+version they screened people with in a lockfile, which is worth having if
+anyone ever asks how a decision was reached.
 
 ```bash
 # In their repo. `uv init` only if it is not already a uv project.
-uv add "talanton @ git+https://github.com/danielvogler/talanton"
+uv add talanton
 
 # Then scaffold it. This writes the config, makes the directories, and
 # gitignores candidate data BEFORE the first CV arrives — which is the whole
@@ -179,14 +179,11 @@ export TALANTON_CONFIG=hiring/talanton.toml
 uv run talanton check
 # Add extras only if they need them: [gdrive] for Drive, [gcs] for a bucket,
 # [anthropic] if screening.model is a Claude id rather than a Gemini one.
-# uv add "talanton[gdrive,gcs] @ git+https://github.com/danielvogler/talanton"
+# uv add "talanton[gdrive,gcs]"
 
-# If this repository is private, HTTPS will not authenticate. Use SSH instead:
-# uv add "talanton @ git+ssh://git@github.com/danielvogler/talanton"
-# That works wherever their key is loaded. It will NOT work from CI or a
-# deployed job without a deploy key or token — tell them that before they
-# plan to automate it.
-
+# Pin it if their deployment needs the same engine every run: `uv add
+# "talanton==X.Y.Z"`. Their lockfile already does this for them, so only pin
+# by hand where nothing commits a lockfile.
 ```
 
 `init` puts everything under `hiring/` by default; `--dir` moves it. If they
