@@ -349,11 +349,12 @@ your-hiring/
   assessments/        one YAML per candidate. never in this repo
 ```
 
-Not on PyPI — it installs from git. Make your hiring repo a uv project and add
-it as a dependency, so the version you screened people with is in a lockfile:
+On [PyPI](https://pypi.org/p/talanton). Make your hiring repo a uv project and
+add it as a dependency, so the version you screened people with is in a
+lockfile:
 
 ```bash
-uv add "talanton @ git+https://github.com/danielvogler/talanton"
+uv add talanton
 uv run talanton init          # config, directories, and gitignore
 uv run talanton check
 ```
@@ -361,11 +362,11 @@ uv run talanton check
 `init` gitignores `cvs/` and `assessments/` before the first CV arrives, which
 is the point of running it at setup rather than after.
 
-Drop `[gdrive]` if CV originals stay in the store. To try it without adding a
-dependency at all:
+Add `talanton[gdrive]` if CV originals live in Google Drive, `[gcs]` for a
+bucket. To try it without adding a dependency at all:
 
 ```bash
-uvx --from "talanton @ git+https://github.com/danielvogler/talanton" talanton --help
+uvx talanton --help
 ```
 
 Settings live in the committed TOML. Secrets never do — the mailbox password
