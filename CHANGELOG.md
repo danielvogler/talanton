@@ -10,6 +10,39 @@ happen.
 
 ## [Unreleased]
 
+## [0.7.1] - 2026-09-12
+
+### Added
+
+- A GitHub release for every tag, created after the PyPI upload succeeds and
+  carrying this file's section as its notes and the built sdist and wheel as
+  its artifacts. Until now a tag published to PyPI and left nothing on GitHub,
+  so somebody who arrived at the repository rather than at the package saw a
+  project with no releases. The attached files are the ones the build produced
+  and `publish` uploaded, not a rebuild that could differ from what is on PyPI.
+- This changelog, with entries reconstructed for the versions that predate it.
+- `scripts/changelog-section.sh`, which prints one version's section and fails
+  if it has none. The release workflow uses it twice — to refuse a tag with no
+  entry, and to render that entry as the release notes — so the check and the
+  notes cannot disagree.
+- `.github/dependabot.yml`, weekly for GitHub Actions and for the lockfile. The
+  actions are pinned to commit SHAs, which is safe from a moved tag and blind
+  to a patched vulnerability; something has to bring the new SHA to a pull
+  request where a person can read it.
+
+### Fixed
+
+- The README and AGENTS.md said talanton was not on PyPI and had to be
+  installed from git. It has been on PyPI since 0.6.0. Somebody following the
+  setup instructions pinned a git ref instead of a version, which is the one
+  thing those instructions exist to prevent.
+
+### Note
+
+- The engine is unchanged from 0.7.0 — nothing under `talanton/` moved. This
+  version exists so that a tag produces the GitHub release that 0.6.0 and
+  0.7.0, both published before the job existed, do not have.
+
 ## [0.7.0] - 2026-09-12
 
 ### Added
@@ -73,6 +106,7 @@ happen.
   IMAP for the apply mailbox, `dry_run` on by default everywhere, and
   candidate data gitignored by `talanton init` before the first CV arrives.
 
-[Unreleased]: https://github.com/danielvogler/talanton/compare/v0.7.0...HEAD
+[Unreleased]: https://github.com/danielvogler/talanton/compare/v0.7.1...HEAD
+[0.7.1]: https://github.com/danielvogler/talanton/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/danielvogler/talanton/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/danielvogler/talanton/releases/tag/v0.6.0

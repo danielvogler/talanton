@@ -1,6 +1,6 @@
 [project]
 name = "talanton"
-version = "0.7.0"
+version = "0.7.1"
 description = "An agentic hiring pipeline: draft the role, screen what arrives, surface only who is worth reading."
 readme = "README.md"
 requires-python = ">=3.11"
