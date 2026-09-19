@@ -10,6 +10,35 @@ happen.
 
 ## [Unreleased]
 
+### Changed
+
+- Sending a digest no longer downloads every assessment in the opening three
+  times over. Emailing about eighteen candidates from a pool of seventy-two
+  took about five minutes before the mail went, because the CV links, the
+  counts and the name check each answered their own question by reading the
+  whole pool.
+
+  The links now read only the candidates being written about, the footer is
+  answered from listings alone, and the name check — which has to see every
+  recorded name, since a name leaking for somebody who was not shortlisted is
+  exactly as bad — reads the pool once rather than being one of three passes.
+  On fifty candidates, a digest about three went from 150 reads to 53, or to 3
+  where a deployment permits names and the guard does not run.
+
+### Added
+
+- A round-trip budget, asserted in the tests. A counting location records every
+  `list` and `read`, and each operation is run against a small pool and one ten
+  times the size with the counts required not to differ.
+
+  These costs are invisible where they are written: `load_assessments()` reads
+  like a dictionary lookup and is one request per assessment, and a local
+  folder makes every one of them free — so the tests passed, a laptop was fast,
+  and only an operator with a live Drive folder ever paid. A ceiling would have
+  been raised by whoever tripped over it; an assertion that the cost must not
+  scale can only be satisfied by fixing the cause.
+
+
 ### Fixed
 
 - An application nobody could read is now reported rather than silently
