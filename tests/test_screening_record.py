@@ -6,7 +6,7 @@ place, by a particular version of this tool. None of that was written down, so
 which is the question that matters if a decision is ever challenged.
 """
 
-from talanton import config, run, screening, store, tools
+from talanton import config, screening, store, tools
 from tests.conftest import OPENING
 
 GOOD = {"overall": 7.0, "justification": "Strong.", "knockouts": {"work_permit": "pass"}}

@@ -188,6 +188,8 @@ def assess(role: str, rescreen: bool = False) -> str:
             standard applies to the whole pool rather than only to whoever
             arrives next.
     """
+    from . import positions, screening, store
+
     prompt = RESCREEN_PROMPT if rescreen else ASSESS_PROMPT
     # `assessor`, not the root agent, and this is the whole of the guarantee.
     # The root agent reaches the correspondent, and the correspondent has the
@@ -196,7 +198,44 @@ def assess(role: str, rescreen: bool = False) -> str:
     # the same screener and the same rubric and no correspondent at all, so
     # there is nothing to delegate to and nothing for a prompt to talk its way
     # into. Delivery belongs to `shortlist`, which says so in its name.
-    return ask(prompt.format(role=role), user_id="system", app=assessor_app)
+    slug = positions.slug(positions.resolve(role))
+    with screening.run_recorded() as screening_run:
+        said = ask(prompt.format(role=role), user_id="system", app=assessor_app)
+
+    # The agent's own account of what it did is not evidence that it did it.
+    # An LLM always produces text, so checking that it spoke — which is what
+    # this used to do — could never fail for the case it was written for: a run
+    # that assessed a fraction of the pool and summarised that fraction as the
+    # whole of it.
+    missed = _not_covered(slug, screening_run, rescreen)
+    if missed:
+        total = len(store.candidates(slug))
+        raise StageFailedError(
+            f"the run reported success having left {len(missed)} of {total} candidate(s) "
+            f"{'unreassessed' if rescreen else 'unassessed'}. What it said it did:\n{said}"
+        )
+    return said
+
+
+def _not_covered(opening: str, screening_run: str, rescreen: bool) -> list[str]:
+    """Candidates this run was supposed to reach and did not.
+
+    A plain run is measured by the queue: anything still waiting was not done.
+    A rescreen empties nothing — everybody already has an assessment — so it is
+    measured by whether each assessment carries this run's id. Not by the date,
+    which a rescreen on the day of the original would satisfy without having
+    reassessed anybody.
+    """
+    from . import store, tools
+
+    if not rescreen:
+        return [row["candidate"] for row in tools.list_new_cvs(opening)["waiting"]]
+    assessments = store.load_assessments(opening)
+    return [
+        candidate
+        for candidate in store.candidates(opening)
+        if assessments.get(candidate, {}).get("screening_run") != screening_run
+    ]
 
 
 def shortlist(role: str) -> str:

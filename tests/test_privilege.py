@@ -240,7 +240,7 @@ def test_the_assessor_is_told_everything_the_root_agent_is_told():
 # --------------------------------------------------------------------------
 
 
-def test_assessing_runs_an_agent_with_no_path_to_an_outbox(monkeypatch):
+def test_assessing_runs_an_agent_with_no_path_to_an_outbox(position, monkeypatch):
     """Observed with dry_run off: `assess --rescreen` mailed the shortlist to
     both operators, from a command whose name says nothing about sending. Every
     stage shared one toolset, so the agent could delegate its way to the
@@ -258,7 +258,7 @@ def test_assessing_runs_an_agent_with_no_path_to_an_outbox(monkeypatch):
     assert seen["app"] is agent.assessor_app
 
 
-def test_rescreening_runs_that_same_agent(monkeypatch):
+def test_rescreening_runs_that_same_agent(position, monkeypatch):
     """The rescreen is the path it was actually observed on."""
     from talanton import agent, run
 
