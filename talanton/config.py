@@ -385,13 +385,45 @@ def parse(data: dict[str, Any], base: Path = Path()) -> Config:
     )
 
 
-def find(start: Path | None = None) -> Path | None:
-    """Locates a config file: $TALANTON_CONFIG, else one in `start`."""
+# Where an upward walk stops. A config above one of these belongs to something
+# else, and pointing a run at another project's candidates is worse than
+# finding no config at all.
+PROJECT_MARKERS = (".git", ".hg")
+
+
+def find(start: Path | None = None, stop: Path | None = None) -> Path | None:
+    """Locates a config file: $TALANTON_CONFIG, else the nearest one at or
+    above the working directory.
+
+    The walk exists because the config lives where hiring lives, which in a
+    repository that does other things too is several levels down — while
+    everything else in that repository resolves against its root and so is run
+    from there. Without the walk, every shell needs an export, and a forgotten
+    export does not fail: `load` falls back to defaults and the run reads an
+    empty location, which looks exactly like a quiet week.
+
+    It stops at a repository boundary. A `talanton.toml` above that belongs to
+    a different project, and silently adopting it would point this run at
+    somebody else's applicants.
+
+    Args:
+        start: Where to begin. Defaults to the working directory.
+        stop: Stop after this directory, whatever markers say. For tests.
+    """
     override = os.environ.get(CONFIG_ENV)
     if override:
         return Path(override)
-    candidate = (start or Path.cwd()) / DEFAULT_CONFIG_NAME
-    return candidate if candidate.exists() else None
+
+    here = (start or Path.cwd()).resolve()
+    for directory in (here, *here.parents):
+        candidate = directory / DEFAULT_CONFIG_NAME
+        if candidate.exists():
+            return candidate
+        if stop is not None and directory == stop.resolve():
+            return None
+        if any((directory / marker).exists() for marker in PROJECT_MARKERS):
+            return None
+    return None
 
 
 def load(path: Path | str | None = None) -> Config:

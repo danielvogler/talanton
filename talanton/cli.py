@@ -37,6 +37,10 @@ from pathlib import Path
 from . import config, locations, positions
 
 EXIT_FAILURE = 1
+# Commands that say something useful with no deployment configured, so warning
+# about its absence would only be noise. `check` reports it itself, and `init`
+# is how you get one.
+WITHOUT_A_DEPLOYMENT = ("init", "check", "secret", "drive-folder")
 VERTEX_VARS = ("GOOGLE_CLOUD_PROJECT", "GOOGLE_CLOUD_LOCATION")
 
 
@@ -966,6 +970,16 @@ def main(argv: list[str] | None = None) -> int:
     config.load_dotenv()
     if args.config:
         config.use(config.load(args.config))
+    elif args.command not in WITHOUT_A_DEPLOYMENT and config.find() is None:
+        # Running on defaults is supported — it is how somebody tries the tool
+        # out. What is not supported is doing it by accident: an unset
+        # TALANTON_CONFIG reads an empty location, and an empty location is
+        # indistinguishable from a quiet week.
+        print(
+            "note  no talanton.toml found here or above; running on defaults, not a deployment.\n"
+            "      If you meant to use one, set TALANTON_CONFIG or pass --config.",
+            file=sys.stderr,
+        )
     # The model client reads the project and region from the environment at
     # call time, so put them there before any stage runs.
     config.apply_environment(config.current())
