@@ -528,8 +528,10 @@ def pool_summary(opening: str) -> dict:
             runs.add(str(assessment["screening_run"]))
 
     scored = {c for c in candidates if c in assessments}
+    could_not_read = store.unreadable(slug) & set(candidates)
     return {
         "opening": slug,
+        "unreadable": sorted(could_not_read),
         "arrived": len(candidates),
         "arrived_by": arrived_by,
         "no_record": no_record,
@@ -562,6 +564,10 @@ def pool_counts(opening: str) -> dict:
         "assessed": len(assessments),
         "excluded": len([a for a in assessments.values() if screening.exclusions(a, position)]),
         "unassessed": len(unassessed(slug)),
+        # Recorded by the run that met them, not recomputed here: reading every
+        # waiting document again to answer a footer would make the cheapest
+        # line in the digest the most expensive thing in the run.
+        "unreadable": store.unreadable(slug),
     }
 
 
@@ -584,10 +590,34 @@ def _counts_line(opening: str) -> str:
     total = f"{received} application{'' if received == 1 else 's'} on file"
 
     if counts["first_report"]:
-        return f"{total} (first report)."
-    new = counts["new"]
-    since = f"{new} new" if new else "none new"
-    return f"{total}, {since} since the last report."
+        line = f"{total} (first report)."
+    else:
+        new = counts["new"]
+        since = f"{new} new" if new else "none new"
+        line = f"{total}, {since} since the last report."
+    return line + _unreadable_line(counts)
+
+
+def _unreadable_line(counts: dict) -> str:
+    """What was never considered, named so somebody can act on it.
+
+    A shortlist is drawn from what could be read, and an application nobody
+    could read is absent from it rather than ranked low — so without this the
+    footer reads the same whether everyone was weighed or two were silently
+    dropped. Ids, not names: an id carries no identity and is exactly what an
+    operator needs to go and ask that applicant for a different file.
+
+    Nothing is added when nothing was unreadable. The footer is one sentence
+    and does not grow a clause for a case that did not arise.
+    """
+    ids = sorted(counts.get("unreadable") or ())
+    if not ids:
+        return ""
+    were = "was" if len(ids) == 1 else "were"
+    return (
+        f"\n{len(ids)} could not be read and {were} not considered: {', '.join(ids)}. "
+        "Ask them for a file with a text layer."
+    )
 
 
 def send_digest(opening: str, summary: str, candidates: list[str]) -> dict:

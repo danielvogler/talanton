@@ -517,6 +517,9 @@ def _print_pool(pool: dict) -> None:
         print(f"      {count:>4}  {model or '?'}{served}")
     if pool["judged_by"] and len(pool["judged_by"]) > 1:
         print("            more than one model judged this pool; the standard was not uniform")
+    if pool["unreadable"]:
+        print(f"  unreadable  {len(pool['unreadable'])} never considered: {', '.join(pool['unreadable'])}")
+        print("              Not scored low — not scored at all. Ask for a file with a text layer.")
     if pool["screening_runs"]:
         print(f"  runs        {pool['screening_runs']} screening run(s) behind those assessments")
 
