@@ -518,6 +518,9 @@ def cmd_show(args: argparse.Namespace) -> int:
     print(f"  cv          {assessment.get('cv', '')}")
     print(f"  open it     {assessment.get('cv_uri', '')}")
     print(f"  assessed    {assessment.get('assessed_on', '')}")
+    if assessment.get("model"):
+        served = f" in {assessment['location']}" if assessment.get("location") else ""
+        print(f"  judged by   {assessment['model']}{served}, talanton {assessment.get('talanton', '?')}")
 
     arrival = store.provenance(args.candidate, slug)
     if arrival:

@@ -11,11 +11,45 @@ the operator's inbox, and `excluded` lists exactly who it caught and why, so a
 person can audit the filter and unset it.
 """
 
+import uuid
+from collections.abc import Iterator
+from contextlib import contextmanager
+from contextvars import ContextVar
 from typing import Any
 
 # A knockout the CV simply does not answer is not a failure. Those candidates
 # get asked, they are not filtered.
 FAILED = "fail"
+
+# What the `model` field says when there was no model: `next` and `record` let
+# a coding agent do the reading, and naming a Gemini id there would be a lie.
+# An assessment that misreports its author is worse than one that says nothing.
+BY_HAND = "by-hand"
+
+# The screening run an assessment belongs to, if it belongs to one. A run is
+# one sweep over a pool, and recording it is what makes "was this pool judged
+# in one pass, by one model?" answerable from the files rather than from
+# somebody's memory of what they ran.
+#
+# A ContextVar rather than a module global: `record` saves one assessment with
+# no run around it at all, and that must stay true rather than inherit
+# whichever run happened last.
+_run: ContextVar[str] = ContextVar("screening_run", default="")
+
+
+def current_run() -> str:
+    """The screening run in progress, or empty when a save stands alone."""
+    return _run.get()
+
+
+@contextmanager
+def run_recorded(run_id: str = "") -> Iterator[str]:
+    """Marks everything saved inside it as one screening run."""
+    token = _run.set(run_id or uuid.uuid4().hex[:12])
+    try:
+        yield _run.get()
+    finally:
+        _run.reset(token)
 
 
 def min_score(position: dict[str, Any]) -> float:

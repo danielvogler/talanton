@@ -46,6 +46,21 @@ DOCUMENT_HEADING = "=== document {ordinal} of {total}: {name} ==="
 DOCUMENT_UNREADABLE = "[this document could not be read: {reason}]"
 
 
+def version() -> str:
+    """The installed talanton version, or empty if it cannot be determined.
+
+    Read from the installed metadata rather than a constant, so a record cannot
+    claim a version the running code is not.
+    """
+    from importlib.metadata import PackageNotFoundError
+    from importlib.metadata import version as installed
+
+    try:
+        return installed("talanton")
+    except PackageNotFoundError:
+        return ""
+
+
 def jsonable(value: Any) -> Any:
     """Makes a parsed position safe to hand to a model.
 
@@ -319,6 +334,10 @@ def save_assessment(opening: str, cv: str, assessment: dict) -> dict:
     candidate = store.candidate_id(cv)
     match = next((i for i in store.list_cvs(slug) if i.name == cv), None)
 
+    # Added here, after the screener's answer, so nothing a model writes can
+    # forge them: an assessment claiming a model it did not come from would be
+    # worse than one claiming nothing.
+    active = current().screening
     record = {
         **assessment_module.normalise(assessment),
         "candidate": candidate,
@@ -327,6 +346,13 @@ def save_assessment(opening: str, cv: str, assessment: dict) -> dict:
         "opening": position["opening"],
         "role": position["id"],
         "assessed_on": date.today().isoformat(),
+        # How this judgement was produced. A score is a particular model's
+        # reading of a particular rubric, and "was the whole pool judged the
+        # same way?" is unanswerable without these three.
+        "model": active.model or screening.BY_HAND,
+        "location": active.location,
+        "talanton": version(),
+        "screening_run": screening.current_run(),
     }
     written = store.save_assessment(candidate, record, slug)
     reasons = screening.exclusions(record, position)
