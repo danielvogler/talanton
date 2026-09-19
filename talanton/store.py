@@ -33,6 +33,14 @@ ASSESSMENT_SUFFIX = ".yaml"
 # reads them filters on that suffix. A marker that looked like an assessment
 # would be loaded as one.
 REPORT_MARKER = "last-report.json"
+# Who could not be read, from the last run that tried. Deliberately not .yaml,
+# for the same reason as the marker above: everything reading assessments
+# filters on that suffix and would load this as one.
+#
+# Recorded rather than recomputed. Whether a candidate is readable is only
+# knowable by reading their documents, and the digest is not the place to read
+# every waiting application again — the run that already met them knows.
+UNREADABLE_MARKER = "unreadable.json"
 ID_PREFIX = "c-"
 ID_LENGTH = 16
 
@@ -320,6 +328,35 @@ def save_assessment(candidate: str, data: dict[str, Any], opening: str = "") -> 
     """Writes one assessment, replacing any earlier one for that candidate."""
     payload = yaml.safe_dump(data, sort_keys=False, allow_unicode=True).encode("utf-8")
     return assessments(opening).write(assessment_name(candidate), payload)
+
+
+def record_unreadable(candidates: set[str], opening: str = "") -> Item:
+    """Remembers who could not be read, replacing the previous answer.
+
+    Replacing rather than accumulating: somebody who sends a readable file
+    after being asked for one must stop being counted, and an operator chasing
+    a list that never shrinks stops chasing it.
+    """
+    payload = json.dumps(
+        {"candidates": sorted(candidates), "at": datetime.now(UTC).isoformat()}, indent=2
+    ).encode("utf-8")
+    return assessments(opening).write(UNREADABLE_MARKER, payload)
+
+
+def unreadable(opening: str = "") -> set[str]:
+    """Candidates the last run could not read. Empty is an ordinary answer."""
+    location = assessments(opening)
+    item = next((i for i in location.list() if i.name == UNREADABLE_MARKER), None)
+    if item is None:
+        return set()
+    try:
+        parsed = json.loads(location.read(item).decode("utf-8"))
+    except (ValueError, UnicodeDecodeError, LocationError):
+        # A damaged marker must not stop a digest. The cost is a report that
+        # does not mention them, which is what it did before.
+        logging.warning("Could not read the unreadable marker for %r; treating it as absent", opening)
+        return set()
+    return {str(c) for c in parsed.get("candidates", [])}
 
 
 def last_reported(opening: str = "") -> set[str]:

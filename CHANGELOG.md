@@ -12,6 +12,33 @@ happen.
 
 ### Fixed
 
+- An application nobody could read is now reported rather than silently
+  absent. It is correctly left unassessed instead of scored zero, but
+  `shortlist` ranks what is assessed — so an unreadable application was not
+  ranked low, it was missing, and the digest read identically whether the
+  shortlist was drawn from the whole pool or from most of it. The footer whose
+  stated job is telling an empty pipeline from a broken one could not tell
+  them apart.
+
+  The digest now says how many could not be read and names their ids, which is
+  what lets somebody go and ask those applicants for a file with a text layer.
+  `status --full` says the same. The ids carry no identity, so this is
+  unaffected by whether the deployment permits names.
+
+  Worth stating why it is a fix rather than a note in the documentation: a
+  scanned PDF is what you get from somebody who printed, signed and scanned
+  their CV, which tracks career stage and country of origin far more than it
+  tracks whether they can do the job. Dropping those applications without
+  saying so is a selection effect, and a written rubric exists to rule those
+  out.
+
+  Recorded by the run that met them rather than recomputed for the digest:
+  whether a document can be read is only knowable by reading it, and a footer
+  is not the place to read every waiting application again.
+
+
+### Fixed
+
 - `shortlist` no longer follows a delivered shortlist with a report
   contradicting it. Both carried the same subject a minute apart, and an
   operator reading the later one as the truer one drops a candidate who

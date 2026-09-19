@@ -86,3 +86,21 @@ def test_the_summary_reads_one_listing_per_location(position, cv, monkeypatch):
     monkeypatch.setattr(store, "provenance", _counted)
     tools.pool_summary(OPENING)
     assert calls["count"] == 0, "the per-candidate accessor is the slow one"
+
+
+def test_the_pool_says_who_could_not_be_read(position, cv):
+    """Soundness, not size: a pool where two were never considered is not the
+    same pool as one where everybody was."""
+    cv("a.txt")
+    scan = store.candidate_id("scan.pdf")
+    store.write_documents(scan, [("scan.pdf", b"%PDF-1.4 no text layer")], OPENING)
+    store.record_unreadable({scan}, OPENING)
+    assert tools.pool_summary(OPENING)["unreadable"] == [scan]
+
+
+def test_a_stale_record_does_not_invent_a_candidate(position, cv):
+    """Somebody withdrawn after being recorded unreadable is not in the pool,
+    and a count that says otherwise is wrong in the direction that matters."""
+    cv("a.txt")
+    store.record_unreadable({"c-" + "f" * 16}, OPENING)
+    assert tools.pool_summary(OPENING)["unreadable"] == []

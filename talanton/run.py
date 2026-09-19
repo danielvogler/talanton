@@ -215,6 +215,9 @@ def assess(role: str, rescreen: bool = False) -> str:
     # that assessed a fraction of the pool and summarised that fraction as the
     # whole of it.
     missed, unreadable = _not_covered(slug, screening_run, rescreen)
+    # Recorded whether or not there were any, so somebody who sends a readable
+    # file after being asked stops being counted.
+    store.record_unreadable(set(unreadable), slug)
     if unreadable:
         # Not a failure, and never was: nothing is saved for a document that
         # cannot be read, so it stays in the queue for good. Counting that as
