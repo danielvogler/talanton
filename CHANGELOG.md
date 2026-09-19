@@ -10,6 +10,39 @@ happen.
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-09-19
+
+### Fixed
+
+- `fetch` no longer merges different people into one candidate. 0.8.0 keyed an
+  application on the sender's address, so every message from one address was
+  one candidate — and an agency, a shared HR mailbox or a colleague forwarding
+  on somebody's behalf sends for several people. Four applications arriving
+  from one address became one candidate, and because each was written under the
+  same id, the later ones overwrote the earlier ones. Three real applicants
+  were destroyed, leaving nothing in the store or the output to notice.
+
+  This was the reverse of the bug 0.8.0 set out to fix, and worse than it: a
+  phantom candidate can be seen in a listing and discarded, a destroyed one
+  cannot.
+
+  An application is now keyed on the message — `Message-ID`, falling back to
+  the mailbox's own id — which is the unit the multi-document grouping actually
+  needs. One message with three attachments is still one candidate. The sender
+  is recorded in the provenance record, where it belongs, rather than used as
+  an identity.
+
+  The cost, accepted deliberately: somebody who sends a second message with a
+  document they forgot becomes a second candidate. That is a duplicate, which
+  is visible and can be merged by a person who can see both. A merge is a
+  decision taken on somebody's behalf without telling them.
+
+- `write_documents` logs a warning when it writes over a candidate that already
+  has documents. Legitimate on a re-read, never routine, and it is where a
+  fault in whatever derives the id shows up first — silence there is what let
+  the above destroy records rather than merely confuse them.
+
+
 ## [0.8.0] - 2026-09-19
 
 ### Added
@@ -49,10 +82,10 @@ happen.
   letter scoring near zero and appearing in the shortlist as a weak applicant
   who does not exist, the certificates coming back `unreadable`.
 
-  A message is now one application, keyed on the sender rather than on each
-  filename, and all of a candidate's documents are read and assessed together.
-  One unreadable document among several no longer loses the others. A message
-  with no usable sender still gets a candidate of its own.
+  A message is now one application, and all of a candidate's documents are
+  read and assessed together. One unreadable document among several no longer
+  loses the others. (This shipped keyed on the sender, which was wrong; see
+  0.8.1.)
 
 - `assess` has no path to an outbox. It runs the `assessor` agent, which holds
   the same screener and rubric and no correspondent. With `dry_run = false`,

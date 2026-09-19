@@ -126,6 +126,19 @@ def write_documents(candidate: str, documents: Sequence[tuple[str, bytes]], open
     body it is about to send rather than trusting this.
     """
     location = cvs(opening)
+    # Writing over a candidate who already has documents is how one applicant
+    # replaces another without anyone noticing. It is legitimate — a re-read of
+    # the same message, a corrected file — but it is never routine, and a bug in
+    # whatever derives the id shows up here first and nowhere else.
+    existing = documents_for(candidate, opening)
+    if existing:
+        logging.warning(
+            "%s already has %d document(s) in opening %r; writing over them. If this candidate is "
+            "not the same application, whatever produced the id has merged two people.",
+            candidate,
+            len(existing),
+            opening,
+        )
     return [
         location.write(document_name(candidate, ordinal, Path(original).suffix.lower()), payload)
         for ordinal, (original, payload) in enumerate(documents, start=FIRST_DOCUMENT)

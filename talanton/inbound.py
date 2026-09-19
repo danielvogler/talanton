@@ -23,6 +23,9 @@ from .config import current
 
 DOCUMENT_SUFFIXES = (".pdf", ".doc", ".docx", ".odt", ".rtf", ".txt", ".md")
 UNKNOWN_SENDER = "unknown"
+# A message with no Message-ID header. Rare, and not a reason to merge it
+# with the next one.
+UNKNOWN_MESSAGE = "message"
 # How an application that came through the mailbox is recorded, against the
 # `import` that `talanton.intake` writes for one that did not.
 VIA = "mailbox"
@@ -75,6 +78,10 @@ def unread(session: IMAPClient) -> list[dict[str, Any]]:
                 # second time.
                 "raw": raw,
                 "sender": email.utils.parseaddr(str(msg.get("From", "")))[1].lower(),
+                # The application's identity. Globally unique and written
+                # by the sending client, so two applications forwarded from
+                # one agency address stay two applications.
+                "message_id": str(msg.get("Message-ID", "")).strip(),
                 # Two lists, and the difference is the routing decision. One is
                 # what the receiving server recorded, the other is what the
                 # message claims. Only the first sorts anything.
@@ -178,21 +185,31 @@ def attachments(msg: email.message.Message) -> list[tuple[str, bytes]]:
     return out
 
 
-def application_id(sender: str, message_id: str = "") -> str:
+def application_id(message_id: str, uid: str = "") -> str:
     """The candidate one message's documents belong to.
 
-    Keyed on the sender rather than on each filename. Namespacing by filename
-    separates two people who both attach `cv.pdf`, which is necessary, but it
-    cannot join one person who attaches three documents — and that person then
-    becomes three candidates, two of whom do not exist and one of whom is a
-    covering letter scoring near zero against every rubric dimension.
+    Keyed on the message. One message is one application, and that is the only
+    unit here that holds: a sender is not an applicant.
 
-    A message with no usable sender falls back to the message itself. Every
-    anonymous application collapsing into one candidate would lose all but the
-    last, which is a worse failure than a candidate with no address.
+    Keying on the filename cannot join one person's three attachments, so they
+    become three candidates — two of them phantoms. Keying on the sender joins
+    them, and then joins four different people who reached the mailbox through
+    one agency, one HR inbox or one colleague forwarding, and writes them over
+    each other. That is the same error with the sign flipped and it is the
+    worse of the two: a phantom candidate can be seen in a listing and
+    discarded, a destroyed one leaves nothing behind to notice.
+
+    The cost is that somebody who sends a second mail with a document they
+    forgot becomes a second candidate. That is a duplicate — visible, and
+    mergeable by a person who can see both. A duplicate is a nuisance; a merge
+    is a decision taken on somebody's behalf without telling them.
+
+    `Message-ID` is written by the sending client and is globally unique. A
+    message without one falls back to the mailbox's own id for it, which is
+    enough to keep two messages apart within a run.
     """
-    address = (sender or "").strip().lower()
-    return store.candidate_id(address or f"{UNKNOWN_SENDER}-{message_id}")
+    token = (message_id or "").strip() or f"{UNKNOWN_MESSAGE}-{uid}"
+    return store.candidate_id(token)
 
 
 def sent_on(msg: email.message.Message) -> str:
@@ -250,7 +267,7 @@ def fetch() -> list[str]:
         for message in messages:
             msg = email.message_from_bytes(message["raw"])
             opening = opening_for(message)
-            candidate = application_id(message["sender"], message["id"])
+            candidate = application_id(message.get("message_id", ""), message["id"])
             enclosed: list[tuple[str, bytes]] = []
             oversize = False
 
