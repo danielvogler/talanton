@@ -78,3 +78,19 @@ def test_the_recorded_fields_survive_the_assessment_schema(position, cv):
     name = cv("anna.txt")
     tools.save_assessment(OPENING, name, {**GOOD, "model": "claimed-by-the-model"})
     assert store.assessment(store.candidate_id(name), OPENING)["model"] != "claimed-by-the-model"
+
+
+def test_the_run_is_visible_from_the_thread_the_agent_runs_on():
+    """`Runner.run` starts a thread and runs the agent inside it. A ContextVar
+    does not cross that boundary, so the run id recorded on every assessment
+    the agent saved was empty — and the rescreen check that reads it back
+    failed runs that had done all their work. Stubbing the agent hides this
+    entirely, which is why it is asserted directly."""
+    import threading
+
+    seen = {}
+    with screening.run_recorded() as expected:
+        thread = threading.Thread(target=lambda: seen.update(run=screening.current_run()))
+        thread.start()
+        thread.join()
+    assert seen["run"] == expected, "the run id did not cross into the agent's thread"

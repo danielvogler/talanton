@@ -14,7 +14,6 @@ person can audit the filter and unset it.
 import uuid
 from collections.abc import Iterator
 from contextlib import contextmanager
-from contextvars import ContextVar
 from typing import Any
 
 # A knockout the CV simply does not answer is not a failure. Those candidates
@@ -31,25 +30,37 @@ BY_HAND = "by-hand"
 # in one pass, by one model?" answerable from the files rather than from
 # somebody's memory of what they ran.
 #
-# A ContextVar rather than a module global: `record` saves one assessment with
-# no run around it at all, and that must stay true rather than inherit
-# whichever run happened last.
-_run: ContextVar[str] = ContextVar("screening_run", default="")
+# A module-level value and NOT a ContextVar, which is what this was first
+# written as. `Runner.run` starts a thread and calls `asyncio.run` inside it,
+# and a ContextVar does not cross into a new thread — so every assessment the
+# agent saved recorded an empty run, and the rescreen check that reads it back
+# failed on runs that had done all their work. Tests that stub the agent run in
+# the main thread and never see it.
+#
+# A module global is visible from that thread. Safe here because a stage is one
+# sweep at a time in one process: nothing runs two screening runs at once, and
+# `run_recorded` restores whatever it replaced.
+_run = ""
 
 
 def current_run() -> str:
     """The screening run in progress, or empty when a save stands alone."""
-    return _run.get()
+    return _run
 
 
 @contextmanager
 def run_recorded(run_id: str = "") -> Iterator[str]:
-    """Marks everything saved inside it as one screening run."""
-    token = _run.set(run_id or uuid.uuid4().hex[:12])
+    """Marks everything saved inside it as one screening run.
+
+    Everything, including work done on the thread `Runner.run` starts.
+    """
+    global _run
+    previous = _run
+    _run = run_id or uuid.uuid4().hex[:12]
     try:
-        yield _run.get()
+        yield _run
     finally:
-        _run.reset(token)
+        _run = previous
 
 
 def min_score(position: dict[str, Any]) -> float:

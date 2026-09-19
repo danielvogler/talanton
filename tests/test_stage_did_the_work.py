@@ -111,3 +111,51 @@ def test_the_run_id_is_what_a_rescreen_is_judged_on(position, assessed, monkeypa
     run.assess(OPENING, rescreen=True)
     assert seen["run"]
     assert store.assessment(store.candidate_id("a.txt"), OPENING)["screening_run"] == seen["run"]
+
+
+def test_an_unreadable_cv_does_not_fail_the_stage_forever(position, cv, monkeypatch):
+    """Nothing is saved for an unreadable CV, by design — so it never leaves
+    the queue. Treating a full queue as failure makes every run fail from then
+    on, on any pool containing one scan."""
+    cv("readable.txt")
+    store.cvs(OPENING).write("scan.pdf", b"%PDF-1.4 no text layer")
+
+    def _assesses_what_it_can(question, user_id="operator", app=None):
+        tools.save_assessment(OPENING, "readable.txt", GOOD)
+        return run.Turn(text="One assessed, one unreadable.")
+
+    monkeypatch.setattr(run, "converse", _assesses_what_it_can)
+    assert run.assess(OPENING)
+
+
+def test_it_still_fails_when_a_readable_one_was_skipped(position, cv, monkeypatch):
+    """The exemption is for documents that cannot be read, not for work that
+    was not done."""
+    cv("readable.txt")
+    cv("also-readable.txt")
+    store.cvs(OPENING).write("scan.pdf", b"%PDF-1.4 no text layer")
+
+    def _assesses_one(question, user_id="operator", app=None):
+        tools.save_assessment(OPENING, "readable.txt", GOOD)
+        return run.Turn(text="All done.")
+
+    monkeypatch.setattr(run, "converse", _assesses_one)
+    with pytest.raises(run.StageFailedError, match="1 of"):
+        run.assess(OPENING)
+
+
+def test_the_unreadable_ones_are_reported_rather_than_swallowed(position, cv, monkeypatch, caplog):
+    """A person has to know which file to ask about."""
+    import logging
+
+    cv("readable.txt")
+    store.cvs(OPENING).write("scan.pdf", b"%PDF-1.4 no text layer")
+
+    def _assesses_it(question, user_id="operator", app=None):
+        tools.save_assessment(OPENING, "readable.txt", GOOD)
+        return run.Turn(text="done")
+
+    monkeypatch.setattr(run, "converse", _assesses_it)
+    with caplog.at_level(logging.WARNING):
+        run.assess(OPENING)
+    assert "unreadable" in caplog.text.lower()

@@ -207,7 +207,17 @@ def assess(role: str, rescreen: bool = False) -> str:
     # this used to do — could never fail for the case it was written for: a run
     # that assessed a fraction of the pool and summarised that fraction as the
     # whole of it.
-    missed = _not_covered(slug, screening_run, rescreen)
+    missed, unreadable = _not_covered(slug, screening_run, rescreen)
+    if unreadable:
+        # Not a failure, and never was: nothing is saved for a document that
+        # cannot be read, so it stays in the queue for good. Counting that as
+        # work not done would fail every run from the first scan onwards.
+        logging.warning(
+            "%d candidate(s) are unreadable and have no assessment: %s. "
+            "Open them yourself, or ask for a file with a text layer.",
+            len(unreadable),
+            ", ".join(unreadable),
+        )
     if missed:
         total = len(store.candidates(slug))
         raise StageFailedError(
@@ -217,25 +227,41 @@ def assess(role: str, rescreen: bool = False) -> str:
     return said
 
 
-def _not_covered(opening: str, screening_run: str, rescreen: bool) -> list[str]:
-    """Candidates this run was supposed to reach and did not.
+def _not_covered(opening: str, screening_run: str, rescreen: bool) -> tuple[list[str], list[str]]:
+    """What this run should have reached and did not, and what it never could.
 
     A plain run is measured by the queue: anything still waiting was not done.
     A rescreen empties nothing — everybody already has an assessment — so it is
     measured by whether each assessment carries this run's id. Not by the date,
     which a rescreen on the day of the original would satisfy without having
     reassessed anybody.
+
+    Whatever is left over is then read, and only the leftovers. A candidate
+    whose documents yield no text never gets an assessment by design, so it
+    would otherwise sit in the queue failing every future run — one scan in a
+    pool would make the stage permanently red. The reading is bounded by what
+    was missed rather than by the size of the pool.
     """
     from . import store, tools
 
-    if not rescreen:
-        return [row["candidate"] for row in tools.list_new_cvs(opening)["waiting"]]
-    assessments = store.load_assessments(opening)
-    return [
-        candidate
-        for candidate in store.candidates(opening)
-        if assessments.get(candidate, {}).get("screening_run") != screening_run
-    ]
+    if rescreen:
+        assessments = store.load_assessments(opening)
+        left = [
+            candidate
+            for candidate in store.candidates(opening)
+            if assessments.get(candidate, {}).get("screening_run") != screening_run
+        ]
+    else:
+        left = [row["candidate"] for row in tools.list_new_cvs(opening)["waiting"]]
+
+    missed, unreadable = [], []
+    for candidate in left:
+        documents = store.documents_for(candidate, opening)
+        if documents and tools.get_cv_text(opening, documents[0].name).get("unreadable"):
+            unreadable.append(candidate)
+        else:
+            missed.append(candidate)
+    return missed, unreadable
 
 
 def shortlist(role: str) -> str:
