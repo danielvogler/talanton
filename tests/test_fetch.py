@@ -28,25 +28,24 @@ def test_an_attachment_becomes_a_cv(position):
     assert parts[0][0] == "cv.txt"
 
 
-def test_two_people_with_the_same_filename_do_not_collide():
+def test_two_applications_do_not_collide():
     """Both must survive; one silently overwriting the other loses an applicant."""
-    assert inbound.application_id("anna@example.test") != inbound.application_id("bob@example.test")
+    assert inbound.application_id("<one@ex>") != inbound.application_id("<two@ex>")
 
 
-def test_one_persons_documents_all_belong_to_that_person():
-    """Why the key is the sender and not the filename: a filename separates two
-    people, and can never join one person's three files."""
-    assert inbound.application_id("anna@example.test") == inbound.application_id(" Anna@Example.Test ")
+def test_the_same_message_is_the_same_candidate():
+    """So a re-read of one message updates it rather than adding a rival."""
+    assert inbound.application_id("<one@ex>") == inbound.application_id(" <one@ex> ")
 
 
-def test_two_messages_without_a_sender_are_not_the_same_candidate():
-    """Collapsing every anonymous application into one would lose all but the
-    last of them, which is worse than a candidate with no address."""
+def test_two_messages_without_a_message_id_are_not_the_same_candidate():
+    """Collapsing them into one would lose all but the last, which is worse
+    than a candidate whose message carried no header."""
     assert inbound.application_id("", "11") != inbound.application_id("", "12")
 
 
 def test_a_fetched_cv_lands_in_the_cvs_location(position):
-    candidate = inbound.application_id("anna@example.test")
+    candidate = inbound.application_id("<anna@ex>")
     store.write_documents(candidate, [("cv.txt", LONG.encode())])
     assert [i.name for i in store.list_cvs()] == [f"{candidate}.txt"]
 
@@ -65,7 +64,7 @@ def test_all_three_documents_are_kept_not_just_the_first(position, monkeypatch):
     raw = _multipart("anna@example.test", {"cv.txt": LONG, "cover-letter.txt": LONG, "certs.txt": LONG})
     monkeypatch.setattr(inbound, "client", lambda: _FakeSession([raw]))
     inbound.fetch()
-    candidate = inbound.application_id("anna@example.test")
+    [candidate] = store.candidates("101-ai-engineer")
     assert len(store.documents_for(candidate, "101-ai-engineer")) == 3
 
 
@@ -74,7 +73,8 @@ def test_fetch_records_how_an_application_arrived(position, monkeypatch):
     raw = _multipart("anna@example.test", {"cv.txt": LONG})
     monkeypatch.setattr(inbound, "client", lambda: _FakeSession([raw]))
     inbound.fetch()
-    record = store.provenance(inbound.application_id("anna@example.test"), "101-ai-engineer")
+    [candidate] = store.candidates("101-ai-engineer")
+    record = store.provenance(candidate, "101-ai-engineer")
     assert record["via"] == "mailbox"
     assert record["source"] == "anna@example.test"
     assert record["arrived"]
@@ -86,16 +86,18 @@ def test_a_forwarded_application_is_distinguishable_from_a_direct_one(position, 
     raw = _multipart("operator@example.com", {"cv.txt": LONG})
     monkeypatch.setattr(inbound, "client", lambda: _FakeSession([raw]))
     inbound.fetch()
-    record = store.provenance(inbound.application_id("operator@example.com"), "101-ai-engineer")
-    assert record["source"] == "operator@example.com"
+    [candidate] = store.candidates("101-ai-engineer")
+    assert store.provenance(candidate, "101-ai-engineer")["source"] == "operator@example.com"
 
 
-def _multipart(sender: str, files: dict[str, str]) -> bytes:
+def _multipart(sender: str, files: dict[str, str], message_id: str = "") -> bytes:
     """One message carrying several documents, as a real application does."""
     from email.message import EmailMessage
 
     msg = EmailMessage()
     msg["From"] = sender
+    if message_id:
+        msg["Message-ID"] = message_id
     msg["Delivered-To"] = "ai-engineer@example.com"
     msg["Subject"] = "Application"
     msg.set_content("Please find my application attached.")
@@ -250,3 +252,69 @@ def test_an_oversized_cv_does_not_become_its_covering_note(configure, position, 
     with caplog.at_level(logging.WARNING):
         assert inbound.fetch() == []
     assert "left unread" in caplog.text
+
+
+# --------------------------------------------------------------------------
+# One message is one application. The sender is not the applicant: agencies,
+# HR mailboxes and an operator forwarding all send for other people.
+# --------------------------------------------------------------------------
+
+
+def test_one_sender_submitting_four_people_is_four_candidates(position, monkeypatch):
+    """An agency forwards four CVs from one address. Keying the candidate on
+    that address makes them one person, and the later messages overwrite the
+    earlier ones — three real applicants destroyed, silently."""
+    made = [
+        _multipart("agency@example.test", {f"{name}.txt": f"{LONG} {name}"}, message_id=f"<{name}@ex>")
+        for name in ("benjamin", "max", "niclas", "peter")
+    ]
+    monkeypatch.setattr(inbound, "client", lambda: _FakeSession(made))
+    inbound.fetch()
+    assert len(store.candidates("101-ai-engineer")) == 4
+
+
+def test_no_applicants_documents_are_overwritten_by_the_next_message(position, monkeypatch):
+    """The failure that makes this worse than the bug it replaced: a phantom
+    candidate can be spotted and discarded, a destroyed one cannot."""
+    made = [
+        _multipart("agency@example.test", {"cv.txt": f"{LONG} {name}"}, message_id=f"<{name}@ex>")
+        for name in ("benjamin", "niclas")
+    ]
+    monkeypatch.setattr(inbound, "client", lambda: _FakeSession(made))
+    inbound.fetch()
+    bodies = [
+        store.read_cv(i, "101-ai-engineer").decode()
+        for items in store.candidates("101-ai-engineer").values()
+        for i in items
+    ]
+    assert any("benjamin" in b for b in bodies)
+    assert any("niclas" in b for b in bodies)
+
+
+def test_one_message_with_three_attachments_is_still_one_candidate(position, monkeypatch):
+    """The grouping this must not lose: three documents, one message, one person."""
+    raw = _multipart("anna@example.test", {"cv.txt": LONG, "letter.txt": LONG, "certs.txt": LONG})
+    monkeypatch.setattr(inbound, "client", lambda: _FakeSession([raw]))
+    inbound.fetch()
+    assert len(store.candidates("101-ai-engineer")) == 1
+
+
+def test_two_messages_from_one_person_are_two_candidates(position, monkeypatch):
+    """The accepted cost. Somebody who forgot a document and sends it again is
+    two candidates — visible, and mergeable by a person. A duplicate is a
+    nuisance; a merge is a decision made on somebody's behalf."""
+    made = [
+        _multipart("anna@example.test", {"cv.txt": LONG}, message_id="<one@ex>"),
+        _multipart("anna@example.test", {"certs.txt": LONG}, message_id="<two@ex>"),
+    ]
+    monkeypatch.setattr(inbound, "client", lambda: _FakeSession(made))
+    inbound.fetch()
+    assert len(store.candidates("101-ai-engineer")) == 2
+
+
+def test_the_sender_is_still_recorded_even_though_it_is_not_the_identity(position, monkeypatch):
+    raw = _multipart("agency@example.test", {"cv.txt": LONG}, message_id="<x@ex>")
+    monkeypatch.setattr(inbound, "client", lambda: _FakeSession([raw]))
+    inbound.fetch()
+    [candidate] = store.candidates("101-ai-engineer")
+    assert store.provenance(candidate, "101-ai-engineer")["source"] == "agency@example.test"
