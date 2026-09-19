@@ -214,6 +214,41 @@ def write_provenance(candidate: str, record: dict[str, Any], opening: str = "") 
     return cvs(opening).write(provenance_name(candidate), payload)
 
 
+def provenances(opening: str = "") -> dict[str, dict[str, Any]]:
+    """Every candidate's arrival record for one opening, from ONE listing.
+
+    The singular form lists the location to find one file, which is right when
+    one candidate is the question. Asking it for a whole pool is a listing per
+    candidate — a round trip each on Drive, and the reconciliation this record
+    exists for is precisely the loop over everybody. On a pool of 72 that did
+    not finish; this returns in one listing plus one read per record.
+
+    Candidates with no record are absent rather than present-and-empty, so a
+    caller can tell "arrived before this was recorded" from "arrived by an
+    unknown route".
+    """
+    location = cvs(opening)
+    out: dict[str, dict[str, Any]] = {}
+    for item in location.list():
+        if not item.name.endswith(PROVENANCE_SUFFIX):
+            continue
+        candidate = item.name.removesuffix(PROVENANCE_SUFFIX)
+        parsed = _read_provenance(location, item, candidate)
+        if parsed is not None:
+            out[candidate] = parsed
+    return out
+
+
+def _read_provenance(location: locations.Location, item: Item, candidate: str) -> dict[str, Any] | None:
+    """One record, or None if it cannot be read. A damaged one is not fatal."""
+    try:
+        parsed = yaml.safe_load(location.read(item).decode("utf-8"))
+    except (yaml.YAMLError, UnicodeDecodeError, LocationError):
+        logging.warning("Could not read the provenance record for %s; treating it as absent", candidate)
+        return None
+    return parsed if isinstance(parsed, dict) else None
+
+
 def provenance(candidate: str, opening: str = "") -> dict[str, Any]:
     """What is known about one application's arrival, or an empty dict.
 
@@ -225,14 +260,9 @@ def provenance(candidate: str, opening: str = "") -> dict[str, Any]:
     item = next((i for i in location.list() if i.name == wanted), None)
     if item is None:
         return {}
-    try:
-        parsed = yaml.safe_load(location.read(item).decode("utf-8"))
-    except (yaml.YAMLError, UnicodeDecodeError, LocationError):
-        # A damaged record must not stop an assessment. The cost is one
-        # candidate whose route is unknown, which is what it was before.
-        logging.warning("Could not read the provenance record for %s; treating it as absent", candidate)
-        return {}
-    return parsed if isinstance(parsed, dict) else {}
+    # A damaged record must not stop an assessment. The cost is one candidate
+    # whose route is unknown, which is what it was before the record existed.
+    return _read_provenance(location, item, candidate) or {}
 
 
 def openings() -> locations.Location:

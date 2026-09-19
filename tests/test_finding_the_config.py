@@ -7,8 +7,6 @@ every shell needed an export, and a forgotten one did not fail. It ran against
 default locations instead, which is an empty pool that looks like a quiet week.
 """
 
-import pytest
-
 from talanton import config
 
 

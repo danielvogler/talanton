@@ -169,3 +169,66 @@ def test_documents_too_large_to_read_are_refused_by_the_same_ceiling(position):
     candidate = store.candidate_id("huge.pdf")
     store.write_documents(candidate, [("huge.pdf", b"x" * (documents.MAX_DOCUMENT_BYTES + 1))], OPENING)
     assert tools.get_cv_text(OPENING, f"{candidate}.pdf")["unreadable"]
+
+
+# --------------------------------------------------------------------------
+# Reading provenance for a whole pool. The per-candidate accessor lists the
+# location once per candidate, which is a round trip each on Drive — so the
+# reconciliation the record exists for is the one call that does not finish.
+# --------------------------------------------------------------------------
+
+
+def test_every_candidates_arrival_comes_back_at_once(position, written):
+    first = written("cv.txt")
+    second = written("other.txt")
+    store.write_provenance(first, {"via": "import", "source": "a-board"}, OPENING)
+    store.write_provenance(second, {"via": "mailbox", "source": "someone@example.test"}, OPENING)
+    records = store.provenances(OPENING)
+    assert records[first]["source"] == "a-board"
+    assert records[second]["via"] == "mailbox"
+
+
+def test_it_costs_one_listing_however_many_candidates(position, written, monkeypatch):
+    """The whole point. One listing, not one per candidate."""
+    for name in ("a.txt", "b.txt", "c.txt", "d.txt"):
+        candidate = written(name)
+        store.write_provenance(candidate, {"via": "import"}, OPENING)
+
+    location = store.cvs(OPENING)
+    listings = {"count": 0}
+    original = location.list
+
+    def _counted():
+        listings["count"] += 1
+        return original()
+
+    monkeypatch.setattr(store, "cvs", lambda opening="": _Recording(location, listings))
+    store.provenances(OPENING)
+    assert listings["count"] == 1, f"listed {listings['count']} times for 4 candidates"
+
+
+class _Recording:
+    """A location that counts how often it is listed."""
+
+    def __init__(self, inner, tally):
+        self._inner, self._tally = inner, tally
+        self.backend = inner.backend
+
+    def list(self):
+        self._tally["count"] += 1
+        return self._inner.list()
+
+    def read(self, item):
+        return self._inner.read(item)
+
+
+def test_a_candidate_with_no_record_is_simply_absent(position, written):
+    written("cv.txt")
+    assert store.provenances(OPENING) == {}
+
+
+def test_a_damaged_record_does_not_take_the_others_with_it(position, written):
+    good = written("cv.txt")
+    store.write_provenance(good, {"via": "import"}, OPENING)
+    store.cvs(OPENING).write(f"c-{'f' * 16}{store.PROVENANCE_SUFFIX}", b"\x00 not yaml: [")
+    assert store.provenances(OPENING)[good]["via"] == "import"
