@@ -134,6 +134,20 @@ class LocationSpec:
 
 
 @dataclass(frozen=True)
+class Intake:
+    """Which routes an application may reach the pipeline by.
+
+    The mailbox is always one. Whether to have a second is a policy decision
+    and not the tool's to make, so it is off until a deployment says otherwise:
+    an operator who has decided every application must arrive at one address
+    should not find a command that quietly relaxes it.
+    """
+
+    # `import` is a keyword, so the field cannot share the config key's name.
+    allow_import: bool = False
+
+
+@dataclass(frozen=True)
 class Schedule:
     """How often the sweep runs. How often is a deployment's decision.
 
@@ -165,6 +179,7 @@ class Config:
     outbound: Outbound = field(default_factory=Outbound)
     screening: Screening = field(default_factory=Screening)
     schedule: Schedule = field(default_factory=Schedule)
+    intake: Intake = field(default_factory=Intake)
 
 
 def _section(data: dict[str, Any], name: str) -> dict[str, Any]:
@@ -277,6 +292,12 @@ def _screening(data: dict[str, Any]) -> Screening:
     )
 
 
+def _intake(data: dict[str, Any]) -> Intake:
+    """[intake] — whether a route other than the mailbox is permitted."""
+    section = _section(data, "intake")
+    return Intake(allow_import=bool(section.get("import", Intake.allow_import)))
+
+
 def _location(data: dict[str, Any], name: str, default_path: str) -> LocationSpec:
     """Reads one [storage.<name>] section."""
     storage = _section(data, "storage")
@@ -332,6 +353,7 @@ def parse(data: dict[str, Any], base: Path = Path()) -> Config:
         outbound=_outbound(data, inbound),
         screening=_screening(data),
         schedule=_schedule(data),
+        intake=_intake(data),
     )
 
 

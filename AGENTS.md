@@ -535,13 +535,91 @@ assess it as written.
 | `ads <role>` | Paste-ready board copy for LinkedIn, Indeed and jobs.ch, length-checked. |
 | `publish <role>` | Write the board copy and the rubric into `[storage.openings]`, so whoever reads an assessment can see the bar it was scored against. `--board` picks which board's copy, `--note` adds a provenance line, `--dry-run` shows it without writing. Re-publishing replaces the file rather than adding a second; an unchanged opening is not rewritten at all. Does nothing until `[storage.openings]` is configured. |
 | `drive-folder <path>` | Turn a Drive path into the folder id the config wants. `--create` makes it. *(needs Drive credentials)* |
+| `import <dir> --opening <n> --source <name>` | Bring in applications that did not arrive by mail — a batch from a board, a referral handed over as a folder. **Opt-in**: it does nothing until `[intake] import = true`. `--dry-run` says what it would do. See *Applications that did not arrive by mail*, below. |
 
 ### Needs a mailbox
 
 | Command | What it does |
 |---|---|
 | `inbox` | List unread mail. **Marks nothing, sends nothing.** The safe first look. |
-| `fetch` | Pull CVs out of the mailbox into the CVs location. **Cannot send.** No model call. |
+| `fetch` | Pull CVs out of the mailbox into the CVs location. **Cannot send.** No model call. One message is one candidate, however many documents it carries. |
+
+## Applications that did not arrive by mail
+
+Most applications arrive at the apply mailbox and `fetch` brings them in. Some
+do not: a board that keeps applications on its own site and lets you download
+them in bulk, a referral that reaches somebody as a folder of PDFs.
+
+Those used to have to be re-sent to the apply mailbox by a person. That works,
+and it quietly falsifies the record — the forward carries the operator as the
+sender and the forwarding date as the date, so what gets stored describes the
+forward rather than the application.
+
+`import` is the labelled alternative. It records that an application came in by
+another route, where a forward hides it:
+
+```bash
+uv run talanton import downloads/jobs-ch --opening 101 --source jobs-ch --dry-run
+uv run talanton import downloads/jobs-ch --opening 101 --source jobs-ch
+```
+
+**It is off until a deployment turns it on**, because whether to have a second
+route at all is a policy decision and not the tool's:
+
+```toml
+[intake]
+import = true
+```
+
+Two shapes, read from the directory rather than guessed:
+
+```
+jobs-ch/anna-mueller.pdf          a loose file — one candidate
+jobs-ch/marco-rossi/           a folder — one candidate, all their documents
+    cv.pdf
+    references.pdf
+    certificates.pdf
+```
+
+**You have to do the grouping.** Nothing infers it from filenames, and nothing
+should: a scan called an unlabelled scan or
+belongs to whoever put it in the folder, and no rule over its name could say
+whose it is. Guessing wrong files one person's references under another
+person's name, which is worse than the split it is fixing. If a document has no
+text layer, open it and read the pages — the name is usually on them even when
+`unreadable` is all the pipeline can say about it.
+
+`--dry-run` first, always. It prints every application it found, with the
+documents in each, and writes nothing.
+
+### What it will not do
+
+- **Flatten a folder inside a folder.** One level is an application; two is
+  refused with the reason.
+- **Import the same person twice.** A candidate already in the location is
+  skipped, so re-running a half-finished import is safe.
+- **Import a duplicate download.** `cv.pdf` and `cv (1).pdf` with identical
+  bytes are one candidate, and the copy is reported.
+- **Guess who ran it.** `--by` is recorded when you give it and left out when
+  you do not; an invented identity in a provenance record is worse than an
+  absent one.
+
+### How an application got in
+
+Every candidate now carries a record beside their documents, written by both
+routes:
+
+```yaml
+arrived: 2026-09-19
+via: import          # or: mailbox
+source: jobs-ch      # the board, or the sender's address
+by: daniel@example.com
+documents: [c-1a2b3c4d.pdf, c-1a2b3c4d.d2.pdf]
+```
+
+`talanton show <opening> <candidate>` prints it. It is why "every candidate is
+logged, timed and screened the same way" is now a statement about something
+stored rather than about the mailbox.
 
 ### For an unattended deployment only — these need Vertex and cost money
 

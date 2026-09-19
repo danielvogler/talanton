@@ -121,3 +121,23 @@ location = "global"
 # model is served in every region.
 model = "gemini-3.8-flash"
 max_output_tokens = 8000
+
+
+# ---------------------------------------------------------------------------
+# Whether an application may reach the pipeline by any route other than the
+# apply mailbox.
+#
+# Off by default, and that is the point. The reason to have one intake path is
+# that every candidate is then logged, timed and screened the same way; a
+# second route is a decision somebody makes deliberately, not one a command
+# makes for them.
+#
+# With it on, `talanton import <dir> --opening <n> --source <name>` brings in a
+# folder of applications and records that they came in that way. Without it,
+# the same files have to be forwarded into the apply mailbox by a person —
+# which works, and stores the forward's sender and date instead of the
+# application's.
+# ---------------------------------------------------------------------------
+
+# [intake]
+# import = true

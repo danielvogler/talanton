@@ -21,6 +21,7 @@
     talanton cycle <opening>    fetch if configured, then both of the above
 
     talanton fetch              mailbox -> CVs location. CANNOT SEND
+    talanton import <dir>       a folder of applications -> CVs location; opt-in
     talanton inbox              what is unread, touching nothing
     talanton drive-folder <p>   a Drive folder's id by path, --create to make it
 
@@ -473,7 +474,7 @@ def cmd_status(args: argparse.Namespace) -> int:
 
         print(f"\nopening {position['opening']} — {position['title']}, closes {position['closes']}")
         print(
-            f"  {len(store.list_cvs(slug))} CV(s), {waiting['count']} unassessed, "
+            f"  {len(store.candidates(slug))} candidate(s), {waiting['count']} unassessed, "
             f"{len(candidates)} shortlistable, {len(excluded)} held back"
         )
         for row in waiting["waiting"]:
@@ -511,6 +512,16 @@ def cmd_show(args: argparse.Namespace) -> int:
     print(f"  cv          {assessment.get('cv', '')}")
     print(f"  open it     {assessment.get('cv_uri', '')}")
     print(f"  assessed    {assessment.get('assessed_on', '')}")
+
+    arrival = store.provenance(args.candidate, slug)
+    if arrival:
+        route = arrival.get("via", "")
+        source = arrival.get("source", "")
+        print(f"  arrived     {arrival.get('arrived', '')} by {route}" + (f", from {source}" if source else ""))
+        if arrival.get("by"):
+            print(f"  fetched by  {arrival['by']}")
+        if len(arrival.get("documents") or []) > 1:
+            print(f"  documents   {', '.join(arrival['documents'])}")
 
     score = assessment.get("overall")
     print(f"\n  overall     {score if score is not None else '—'}")
@@ -672,6 +683,50 @@ def cmd_fetch(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_import(args: argparse.Namespace) -> int:
+    """Bring in applications that did not arrive by mail.
+
+    Reads the directory and says what it found before writing anything, because
+    a batch from a board is somebody's misfiled folder as often as it is a
+    clean one, and a wrong import puts a person in the pool under another
+    person's name.
+    """
+    from . import intake
+
+    try:
+        plan = intake.plan(Path(args.directory))
+    except intake.IntakeError as exc:
+        print(f"FAIL  {exc}", file=sys.stderr)
+        return EXIT_FAILURE
+
+    print(f"{len(plan.applications)} application(s) in {plan.directory}:")
+    for application in plan.applications:
+        documents = ", ".join(path.name for path in application.paths)
+        print(f"  {application.candidate}  {application.label}")
+        print(f"      {len(application.paths)} document(s): {documents}")
+
+    try:
+        report = intake.run(
+            plan,
+            positions.slug(positions.resolve(args.opening)),
+            source=args.source,
+            by=args.by,
+            dry_run=args.dry_run,
+        )
+    except intake.IntakeError as exc:
+        print(f"FAIL  {exc}", file=sys.stderr)
+        return EXIT_FAILURE
+
+    for skip in report.skipped:
+        print(f"note  {skip.name}: {skip.reason}")
+
+    verb = "would import" if args.dry_run else "imported"
+    print(f"\nok    {verb} {len(report.imported)} application(s) from {args.source}")
+    if args.dry_run:
+        print("      nothing was written. Run it again without --dry-run.")
+    return 0
+
+
 def cmd_assess(args: argparse.Namespace) -> int:
     from . import run
 
@@ -777,6 +832,19 @@ def build_parser() -> argparse.ArgumentParser:
     sub.add_parser("positions", help="list and validate the open positions").set_defaults(func=cmd_positions)
     sub.add_parser("inbox", help="list unread mail, touching nothing").set_defaults(func=cmd_inbox)
     sub.add_parser("fetch", help="mailbox -> CVs location; cannot send").set_defaults(func=cmd_fetch)
+
+    imp = sub.add_parser("import", help="a folder of applications -> CVs location; opt-in")
+    imp.add_argument("directory", help="a folder of CVs, or of one folder per applicant")
+    imp.add_argument("--opening", required=True, help="the opening these are for")
+    imp.add_argument(
+        "--source",
+        required=True,
+        help="where they came from — the board or the referrer. Recorded against every candidate, "
+        "and the reason this exists rather than forwarding the files into the apply mailbox.",
+    )
+    imp.add_argument("--by", default="", help="who is running the import; recorded when given")
+    imp.add_argument("--dry-run", action="store_true", help="say what would be imported, write nothing")
+    imp.set_defaults(func=cmd_import)
 
     ads = sub.add_parser("ads", help="print paste-ready board copy for one role")
     ads.add_argument("opening", help='an opening number, e.g. "123"')

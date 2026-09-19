@@ -36,6 +36,7 @@ optional mail adapter pull them out of an inbox:
 | | | |
 |---|---|---|
 | **Fetch** *(optional)* | Pulls CVs out of a mailbox into the CVs folder. **It cannot send** — no SMTP path, and no import of the module that has one. | `talanton fetch` |
+| **Import** *(optional, opt-in)* | Brings in a folder of applications that never went near the mailbox — a batch downloaded from a board. Records which route they came by, instead of a forward pretending they arrived as mail. | `talanton import` |
 
 Then **a person decides**. Nothing here can advance, reject or make an offer —
 there is no such tool, and a test asserts none is even *named* like one. And
@@ -233,6 +234,8 @@ talanton status                 # what is in each location. no model, no cost
 talanton show 101  c-1a2b3c4d   # one assessment in full, for a person to read
 talanton inbox                  # optional: what is unread. touches nothing
 talanton fetch                  # optional: mailbox -> CVs folder. cannot send
+talanton import  downloads/ \
+  --opening 101 --source jobs-ch  # optional, opt-in: a folder -> CVs folder
 ```
 
 ---
