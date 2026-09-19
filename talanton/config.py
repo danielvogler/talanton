@@ -134,6 +134,26 @@ class LocationSpec:
 
 
 @dataclass(frozen=True)
+class Shortlist:
+    """What the shortlist mail is allowed to carry.
+
+    Identity is the one thing it withholds by default. Not because a law
+    forbids naming a candidate to the people deciding — none does — but because
+    email has no access control: a name in an inbox is forwarded, archived and
+    outside the drive's membership model, and cannot be taken back. A link
+    leaves identity behind a permission that can be granted and revoked.
+
+    A deployment that would rather have readable mail can say so here, and
+    should write down that it did. Two things make it a smaller decision than
+    it sounds: a short operator list at a domain you control, and the knowledge
+    that `check` warns the allowlist matches a domain rather than an address,
+    so a typo at a permitted domain is a real recipient.
+    """
+
+    names: bool = False
+
+
+@dataclass(frozen=True)
 class Intake:
     """Which routes an application may reach the pipeline by.
 
@@ -180,6 +200,7 @@ class Config:
     screening: Screening = field(default_factory=Screening)
     schedule: Schedule = field(default_factory=Schedule)
     intake: Intake = field(default_factory=Intake)
+    shortlist: Shortlist = field(default_factory=Shortlist)
 
 
 def _section(data: dict[str, Any], name: str) -> dict[str, Any]:
@@ -292,6 +313,12 @@ def _screening(data: dict[str, Any]) -> Screening:
     )
 
 
+def _shortlist(data: dict[str, Any]) -> Shortlist:
+    """[shortlist] — whether the mail may name a candidate."""
+    section = _section(data, "shortlist")
+    return Shortlist(names=bool(section.get("names", Shortlist.names)))
+
+
 def _intake(data: dict[str, Any]) -> Intake:
     """[intake] — whether a route other than the mailbox is permitted."""
     section = _section(data, "intake")
@@ -354,6 +381,7 @@ def parse(data: dict[str, Any], base: Path = Path()) -> Config:
         screening=_screening(data),
         schedule=_schedule(data),
         intake=_intake(data),
+        shortlist=_shortlist(data),
     )
 
 

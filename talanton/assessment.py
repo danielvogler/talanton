@@ -71,6 +71,13 @@ class Facts(BaseModel):
     )
     language: str = Field(default=UNKNOWN, description="Language ability as stated, or unknown.")
     notice_period: str = Field(default=UNKNOWN, description="Notice period as stated, or unknown.")
+    employers: str = Field(
+        default=UNKNOWN,
+        description="The last two or three employers with the title held at each, exactly as the "
+        "CV states them, most recent first, e.g. 'Senior ML Engineer, ETH Zürich; Data Engineer, "
+        "Google Zürich'. Only what the document says — never inferred, never embellished. This is "
+        "what makes a shortlist readable, so it is worth getting right.",
+    )
 
 
 class Assessment(BaseModel):

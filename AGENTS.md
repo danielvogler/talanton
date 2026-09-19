@@ -729,6 +729,13 @@ next version.
   strangers. That is the one place a prompt injection lands, and it lands on
   something with no hands.
 - **The root agent has no send tool.** A decision and its delivery stay apart.
+- **The shortlist names nobody unless the deployment said it may.** The
+  default is ids and CV links, and a summary containing a name is refused
+  rather than sent — not because a law forbids naming a candidate to the
+  people deciding, but because email has no access control and a name in an
+  inbox cannot be taken back. `[shortlist] names = true` is how a company
+  decides otherwise, and it is theirs to decide, not yours. Do not set it to
+  make a guard stop complaining.
 - **Knockouts are enforced in code.** If a candidate is being filtered wrongly,
   fix the rubric with [`/review-filter`](.claude/commands/review-filter.md).
   Never route around the filter.

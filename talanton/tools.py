@@ -375,6 +375,11 @@ def list_candidates(opening: str, min_score: float = -1.0) -> dict:
                 "unscored_dimensions": list(screening.unscored(assessment, position)),
                 "flags": _fence_value(assessment.get("flags") or []),
                 "justification": _fence_value(assessment.get("justification", "")),
+                # What makes a one-line shortlist entry readable: "eight years,
+                # ETH then Google Zürich" says more than any score does, and
+                # says it without naming anybody.
+                "employers": _fence_value((assessment.get("facts") or {}).get("employers", "")),
+                "years_industry": _fence_value((assessment.get("facts") or {}).get("years_industry", "")),
             }
         )
     return {
@@ -488,9 +493,12 @@ def send_digest(opening: str, summary: str, candidates: list[str]) -> dict:
     configured operator addresses. There is no recipient argument, so it cannot
     be pointed at a candidate.
 
-    Write about candidates BY ID ONLY. Never write anyone's name: the shortlist
-    goes by email, and who may learn a candidate's identity is decided by who
-    can open the CV. A summary containing a name is refused, not sent.
+    Write about candidates BY ID ONLY unless the deployment has decided
+    otherwise. By default the shortlist goes by email, and who may learn a
+    candidate's identity is decided by who can open the CV — so a summary
+    containing a name is refused, not sent. Where `[shortlist] names` is on,
+    the deployment has weighed that and names are permitted; write about
+    people's experience either way, never about anything the CV did not say.
 
     Args:
         opening: The opening number, e.g. "123", or its full slug.
@@ -520,7 +528,7 @@ def send_digest(opening: str, summary: str, candidates: list[str]) -> dict:
     # The whole body, not only the prose. A CV stored under the name its sender
     # gave it puts that name into the link, so checking the summary alone
     # refused "Marco" in one paragraph and mailed him in the next.
-    named = _names_in(body, slug)
+    named = _names_in(body, slug) if not current().shortlist.names else set()
     if named:
         return {
             "sent": False,

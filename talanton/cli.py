@@ -87,6 +87,12 @@ def check_config(configured: bool) -> bool:
         _report_password("outbound", active.outbound, active.screening.project)
     if not active.outbound.operators:
         print("note  no operator address — `shortlist` cannot email; read it with `status` instead")
+    if active.shortlist.names:
+        print(
+            "note  [shortlist] names is on — the mail will name candidates. That is a decision "
+            "this deployment made; identity then lives in an inbox rather than behind a "
+            "revocable permission on the CV."
+        )
     if active.inbound.user and active.inbound.user == active.outbound.user:
         print(
             "warn  the sending identity is the apply mailbox. Use a separate account, "

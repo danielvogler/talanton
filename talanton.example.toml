@@ -141,3 +141,24 @@ max_output_tokens = 8000
 
 # [intake]
 # import = true
+
+
+# ---------------------------------------------------------------------------
+# What the shortlist mail carries.
+#
+# By default it carries candidate ids and CV links and never a name, and a
+# summary that names somebody is refused rather than quietly sent. No law
+# requires that. The reason is that email has no access control: a name in an
+# inbox is forwarded, archived and outside the folder membership that governs
+# the CV itself, and it cannot be taken back. A link leaves identity behind a
+# permission somebody can revoke.
+#
+# Set this where readable mail is worth more than that, and write down that
+# you decided it. `check` says so on every run once it is on. Note that
+# allow_domains matches a domain rather than an address, so a typo at a
+# permitted domain is a real recipient — which matters more with names in the
+# body than with links nobody can open.
+# ---------------------------------------------------------------------------
+
+# [shortlist]
+# names = true
