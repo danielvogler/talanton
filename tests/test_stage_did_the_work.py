@@ -18,7 +18,7 @@ GOOD = {"overall": 7.0, "justification": "Strong.", "knockouts": {"work_permit":
 def _assesses(count: int):
     """An agent that assesses `count` of whatever is waiting, then stops."""
 
-    def _run(question, user_id="operator", app=None):
+    def _run(question, user_id="operator", agent_app=None):
         for row in tools.list_new_cvs(OPENING)["waiting"][:count]:
             tools.save_assessment(OPENING, row["cv"], GOOD)
         return run.Turn(text="I have assessed all CVs for this opening.")
@@ -60,7 +60,7 @@ def test_the_agents_own_words_do_not_decide_it(position, cv, monkeypatch):
     """The whole point: confident prose is not evidence of work."""
     cv("a.txt")
 
-    def _says_so_but_does_nothing(question, user_id="operator", app=None):
+    def _says_so_but_does_nothing(question, user_id="operator", agent_app=None):
         return run.Turn(text="All CVs have been assessed successfully.")
 
     monkeypatch.setattr(run, "converse", _says_so_but_does_nothing)
@@ -74,7 +74,7 @@ def test_a_rescreen_that_missed_candidates_is_a_failure(position, cv, assessed, 
     assessed("a.txt")
     assessed("b.txt")
 
-    def _rescreens_one(question, user_id="operator", app=None):
+    def _rescreens_one(question, user_id="operator", agent_app=None):
         tools.save_assessment(OPENING, "a.txt", GOOD)
         return run.Turn(text="Every CV has been reassessed.")
 
@@ -87,7 +87,7 @@ def test_a_rescreen_that_covered_everyone_succeeds(position, assessed, monkeypat
     assessed("a.txt")
     assessed("b.txt")
 
-    def _rescreens_all(question, user_id="operator", app=None):
+    def _rescreens_all(question, user_id="operator", agent_app=None):
         for candidate in list(store.candidates(OPENING)):
             tools.save_assessment(OPENING, f"{candidate}.txt", GOOD)
         return run.Turn(text="Every CV has been reassessed.")
@@ -120,7 +120,7 @@ def test_an_unreadable_cv_does_not_fail_the_stage_forever(position, cv, monkeypa
     cv("readable.txt")
     store.cvs(OPENING).write("scan.pdf", b"%PDF-1.4 no text layer")
 
-    def _assesses_what_it_can(question, user_id="operator", app=None):
+    def _assesses_what_it_can(question, user_id="operator", agent_app=None):
         tools.save_assessment(OPENING, "readable.txt", GOOD)
         return run.Turn(text="One assessed, one unreadable.")
 
@@ -135,7 +135,7 @@ def test_it_still_fails_when_a_readable_one_was_skipped(position, cv, monkeypatc
     cv("also-readable.txt")
     store.cvs(OPENING).write("scan.pdf", b"%PDF-1.4 no text layer")
 
-    def _assesses_one(question, user_id="operator", app=None):
+    def _assesses_one(question, user_id="operator", agent_app=None):
         tools.save_assessment(OPENING, "readable.txt", GOOD)
         return run.Turn(text="All done.")
 
@@ -151,7 +151,7 @@ def test_the_unreadable_ones_are_reported_rather_than_swallowed(position, cv, mo
     cv("readable.txt")
     store.cvs(OPENING).write("scan.pdf", b"%PDF-1.4 no text layer")
 
-    def _assesses_it(question, user_id="operator", app=None):
+    def _assesses_it(question, user_id="operator", agent_app=None):
         tools.save_assessment(OPENING, "readable.txt", GOOD)
         return run.Turn(text="done")
 

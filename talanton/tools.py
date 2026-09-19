@@ -14,6 +14,8 @@ Three things are enforced here rather than left to the model:
 import re
 import unicodedata
 import uuid
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
@@ -44,6 +46,33 @@ UNANSWERED = (None, "", "unknown")
 # case is a single CV and it should read exactly as it always has.
 DOCUMENT_HEADING = "=== document {ordinal} of {total}: {name} ==="
 DOCUMENT_UNREADABLE = "[this document could not be read: {reason}]"
+
+# Who a digest actually reached, for the stage that needs to know whether its
+# standing report is called for.
+#
+# Recorded here rather than read back from the runner's event stream, because
+# `send_digest` is held by the correspondent and `AgentTool` runs that agent in
+# a runner of its own: it consumes the inner events itself and returns merged
+# text, so no event the outer stream carries can ever say a digest went out.
+# `shortlist` therefore believed every delivered run had delivered nothing, and
+# followed each real shortlist with a report contradicting it under the same
+# subject.
+#
+# A module-level value and not a ContextVar: that inner runner is on another
+# thread, and a ContextVar does not cross into one.
+_delivered: list[str] = []
+
+
+@contextmanager
+def deliveries_recorded() -> Iterator[list[str]]:
+    """Collects every address a digest actually reached inside this block."""
+    global _delivered
+    previous, _delivered = _delivered, []
+    collected = _delivered
+    try:
+        yield collected
+    finally:
+        _delivered = previous
 
 
 def version() -> str:
@@ -627,6 +656,10 @@ def send_digest(opening: str, summary: str, candidates: list[str]) -> dict:
         except outbound.SendError as exc:
             return {"sent": False, "error": str(exc), "delivered": delivered}
         delivered.append(address)
+        # Recorded as it happens, so the stage that asked for this digest can
+        # tell it went out even though the event carrying the result never
+        # leaves the correspondent's own runner.
+        _delivered.append(address)
 
     # Only what actually reached a mailbox counts as reported. A dry run shows
     # the operator nothing, so it must not consume the "new since" they are

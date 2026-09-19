@@ -249,8 +249,8 @@ def test_assessing_runs_an_agent_with_no_path_to_an_outbox(position, monkeypatch
 
     seen = {}
 
-    def _capture(question, user_id="operator", app=agent.app):
-        seen["app"] = app
+    def _capture(question, user_id="operator", agent_app=agent.app):
+        seen["app"] = agent_app
         return run.Turn(text="assessed")
 
     monkeypatch.setattr(run, "converse", _capture)
@@ -264,7 +264,9 @@ def test_rescreening_runs_that_same_agent(position, monkeypatch):
 
     seen = {}
     monkeypatch.setattr(
-        run, "converse", lambda q, user_id="operator", app=agent.app: seen.update(app=app) or run.Turn(text="x")
+        run,
+        "converse",
+        lambda q, user_id="operator", agent_app=agent.app: seen.update(app=agent_app) or run.Turn(text="x"),
     )
     run.assess("101", rescreen=True)
     assert seen["app"] is agent.assessor_app
@@ -278,7 +280,7 @@ def test_the_shortlist_still_runs_the_agent_that_can_deliver(monkeypatch):
     monkeypatch.setattr(
         run,
         "converse",
-        lambda q, user_id="operator", app=agent.app: seen.update(app=app)
+        lambda q, user_id="operator", agent_app=agent.app: seen.update(app=agent_app)
         or run.Turn(text="x", delivered=("you@example.com",)),
     )
     run.shortlist("101")
