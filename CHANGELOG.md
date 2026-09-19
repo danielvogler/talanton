@@ -10,6 +10,44 @@ happen.
 
 ## [Unreleased]
 
+### Added
+
+- Assessments record how they were produced: the model, the region it was
+  served from, the talanton version, and the screening run they belong to. A
+  score is one model's reading of one rubric, and "was the whole pool judged
+  the same way?" was unanswerable from the files. A run driven by `next` and
+  `record` records `by-hand` rather than a model id it did not use.
+
+- `status --full` reports the pool above the roster: how candidates arrived and
+  from where, how many of them were scored, and what judged them. It says so
+  plainly when more than one model judged one pool.
+
+### Fixed
+
+- `assess` no longer reports success having done part of the work. A run that
+  assessed ten of seventy-two ended with "I have reassessed all CVs", exit code
+  zero. `StageFailedError` is documented as firing when a stage did not do its
+  work, but what it checked was that the agent produced text — and an LLM
+  always produces text, so it could never fire for the case it was named after.
+  A plain run is now measured by the queue and a rescreen by whether every
+  assessment carries that run's id. Candidates whose documents cannot be read
+  are reported and exempted, since nothing is ever saved for them.
+
+- The config is found at or above the working directory instead of only in it,
+  so a deployment several levels down in a larger repository works without an
+  environment variable in every shell. The walk stops at a repository
+  boundary — a config above that belongs to another project. A command that
+  needed a deployment and found none used to fall back to defaults silently,
+  where an empty location is indistinguishable from a quiet week; it now says
+  so.
+
+### Changed
+
+- Reading a whole pool's arrival records costs one listing rather than one per
+  candidate. On Drive that was a round trip each, and the reconciliation the
+  record exists for was the one call that did not finish.
+
+
 ## [0.8.1] - 2026-09-19
 
 ### Fixed
