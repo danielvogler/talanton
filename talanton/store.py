@@ -307,6 +307,26 @@ def load_assessments(opening: str = "") -> dict[str, dict[str, Any]]:
     return out
 
 
+def assessments_for(candidates: set[str], opening: str = "") -> dict[str, dict[str, Any]]:
+    """The assessments of named candidates only, from one listing.
+
+    `load_assessments` downloads every assessment in the opening, which is
+    right when the question is about the whole pool and wrong when it is about
+    three people out of seventy. This lists once and reads only what was asked
+    for, so the cost tracks the question rather than the pool.
+    """
+    location = assessments(opening)
+    wanted = {assessment_name(c): c for c in candidates}
+    out: dict[str, dict[str, Any]] = {}
+    for item in location.list():
+        candidate = wanted.get(item.name)
+        if candidate is None:
+            continue
+        parsed = yaml.safe_load(location.read(item).decode("utf-8")) or {}
+        out[candidate] = {**parsed, "uri": item.uri}
+    return out
+
+
 def assessment(candidate: str, opening: str = "") -> dict[str, Any]:
     """One assessment, or an empty dict if the candidate is unassessed.
 

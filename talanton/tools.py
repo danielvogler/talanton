@@ -542,7 +542,29 @@ def pool_summary(opening: str) -> dict:
     }
 
 
-def pool_counts(opening: str) -> dict:
+def _arrival_counts(slug: str) -> dict:
+    """How many applications arrived, and how many since the last report.
+
+    Answered from listings alone. None of it needs an assessment's contents,
+    which matters because these are the only numbers the digest footer uses
+    and loading the pool to compute the rest was the most expensive thing in
+    sending a mail.
+    """
+    seen = store.last_reported(slug)
+    here = _candidates(slug)
+    return {
+        "received": len(here),
+        "new": len(here - seen) if seen else 0,
+        "first_report": not seen,
+        # Recorded by the run that met them, not recomputed here: reading every
+        # waiting document again to answer a footer would make the cheapest
+        # line in the digest the most expensive thing in the run. Narrowed to
+        # the current pool, so a withdrawn candidate cannot linger in a count.
+        "unreadable": sorted(store.unreadable(slug) & here),
+    }
+
+
+def pool_counts(opening: str, assessments: dict | None = None) -> dict:
     """What happened to this opening's pool, counted rather than described.
 
     Every digest carries these. An operator reading "nothing to report" cannot
@@ -554,20 +576,13 @@ def pool_counts(opening: str) -> dict:
     """
     position = positions.resolve(opening)
     slug = positions.slug(position)
-    assessments = store.load_assessments(slug)
-    seen = store.last_reported(slug)
-    here = _candidates(slug)
+    if assessments is None:
+        assessments = store.load_assessments(slug)
     return {
-        "received": len(here),
-        "new": len(here - seen) if seen else 0,
-        "first_report": not seen,
+        **_arrival_counts(slug),
         "assessed": len(assessments),
         "excluded": len([a for a in assessments.values() if screening.exclusions(a, position)]),
         "unassessed": len(unassessed(slug)),
-        # Recorded by the run that met them, not recomputed here: reading every
-        # waiting document again to answer a footer would make the cheapest
-        # line in the digest the most expensive thing in the run.
-        "unreadable": store.unreadable(slug),
     }
 
 
@@ -585,7 +600,7 @@ def _counts_line(opening: str) -> str:
     job of this line — the breakdown lives in `status`, where somebody is
     looking for it.
     """
-    counts = pool_counts(opening)
+    counts = _arrival_counts(positions.slug(positions.resolve(opening)))
     received = counts["received"]
     total = f"{received} application{'' if received == 1 else 's'} on file"
 
@@ -657,12 +672,21 @@ def send_digest(opening: str, summary: str, candidates: list[str]) -> dict:
         return {"sent": False, "reason": str(exc)}
 
     links, refused = _cv_links(candidates, position)
+
+    # Loaded once for the whole of this send. The counts and the name check are
+    # both questions about the pool, and each used to answer its own by
+    # downloading every assessment again — three full passes to send one mail.
+    # Skipped entirely when the name check is not running, since the counts
+    # alone do not need anybody's contents.
+    checking_names = not current().shortlist.names
+    pool = store.load_assessments(slug) if checking_names else None
+
     body = f"{summary.rstrip()}\n\n{_counts_line(slug)}" + _link_block(links)
 
     # The whole body, not only the prose. A CV stored under the name its sender
     # gave it puts that name into the link, so checking the summary alone
     # refused "Marco" in one paragraph and mailed him in the next.
-    named = _names_in(body, slug) if not current().shortlist.names else set()
+    named = _names_in(body, slug, pool) if checking_names else set()
     if named:
         return {
             "sent": False,
@@ -706,7 +730,7 @@ def send_digest(opening: str, summary: str, candidates: list[str]) -> dict:
     }
 
 
-def _names_in(summary: str, opening: str) -> set[str]:
+def _names_in(summary: str, opening: str, assessments: dict | None = None) -> set[str]:
     """Any recorded identifier for a candidate that appears in the summary.
 
     The check is against what this system actually recorded, so it cannot be
@@ -726,7 +750,8 @@ def _names_in(summary: str, opening: str) -> set[str]:
     """
     folded = _fold(summary)
     found = set()
-    for assessment in store.load_assessments(opening).values():
+    pool = store.load_assessments(opening) if assessments is None else assessments
+    for assessment in pool.values():
         facts = assessment.get("facts") or {}
         name = _recorded(facts.get("name"))
         if name and _word_in(name, folded):
@@ -776,7 +801,10 @@ def _word_in(name: str, folded: str) -> bool:
 
 def _cv_links(candidates: list[str], position: dict) -> tuple[list[tuple[str, str]], list[dict[str, str]]]:
     """The CV link for each candidate, refusing any the filter excluded."""
-    everything = store.load_assessments(positions.slug(position))
+    # Only the candidates named. This used to download every assessment in the
+    # opening to build links for a handful, which on a real pool is one HTTP
+    # request per candidate on file before the mail is even composed.
+    everything = store.assessments_for(set(candidates), positions.slug(position))
     links: list[tuple[str, str]] = []
     refused: list[dict[str, str]] = []
 
