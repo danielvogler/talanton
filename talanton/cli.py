@@ -6,6 +6,7 @@
     talanton positions          list and validate the open positions
     talanton ads <opening>      paste-ready board copy, to stdout
     talanton status [opening]   every opening and where each one stands
+    talanton status --full      ... and how the pool arrived and what judged it
     talanton show <opening> <candidate>
                                    one assessment, in full, readable
 
@@ -483,6 +484,8 @@ def cmd_status(args: argparse.Namespace) -> int:
         excluded = tools.list_excluded(slug)["excluded"]
 
         print(f"\nopening {position['opening']} — {position['title']}, closes {position['closes']}")
+        if args.full:
+            _print_pool(tools.pool_summary(slug))
         print(
             f"  {len(store.candidates(slug))} candidate(s), {waiting['count']} unassessed, "
             f"{len(candidates)} shortlistable, {len(excluded)} held back"
@@ -496,6 +499,26 @@ def cmd_status(args: argparse.Namespace) -> int:
         for row in excluded:
             print(f"      ·   {row['candidate']}  held back: {', '.join(row['reasons'])}")
     return 0
+
+
+def _print_pool(pool: dict) -> None:
+    """The pool above the roster: how it arrived, and what judged it."""
+    print(f"  arrived     {pool['arrived']}")
+    for (via, source), count in sorted(pool["arrived_by"].items(), key=lambda kv: (-kv[1], kv[0])):
+        print(f"      {count:>4}  {via or '?':<8} {source}")
+    if pool["no_record"]:
+        print(f"      {pool['no_record']:>4}  no arrival record — stored before one was kept")
+
+    print(f"  assessed    {pool['assessed']} of {pool['arrived']}", end="")
+    print(f", {pool['unassessed']} not yet" if pool["unassessed"] else "")
+    for model, where in sorted(pool["judged_by"]):
+        count = pool["judged_by"][(model, where)]
+        served = f" in {where}" if where else ""
+        print(f"      {count:>4}  {model or '?'}{served}")
+    if pool["judged_by"] and len(pool["judged_by"]) > 1:
+        print("            more than one model judged this pool; the standard was not uniform")
+    if pool["screening_runs"]:
+        print(f"  runs        {pool['screening_runs']} screening run(s) behind those assessments")
 
 
 def cmd_show(args: argparse.Namespace) -> int:
@@ -865,6 +888,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     status = sub.add_parser("status", help="what is in each location")
     status.add_argument("opening", nargs="?", help="an opening number; omit for all")
+    status.add_argument(
+        "--full",
+        action="store_true",
+        help="add the pool above the roster: how candidates arrived, how many were scored, "
+        "and what judged them",
+    )
     status.set_defaults(func=cmd_status)
 
     show = sub.add_parser("show", help="one assessment, in full")

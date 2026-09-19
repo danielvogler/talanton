@@ -462,6 +462,55 @@ def missing_facts(assessment: dict) -> set[str]:
     return {f for f in EXPECTED_FACTS if facts.get(f) in UNANSWERED}
 
 
+def pool_summary(opening: str) -> dict:
+    """The pool rather than the roster: how it arrived, and how it was judged.
+
+    Three questions precede a shortlist and none of them were answerable from
+    `status`: did everything that arrived get scored, how did it arrive, and
+    was the whole pool judged the same way. Each was a throwaway script.
+
+    Reads one listing per location rather than one per candidate, because this
+    is the command somebody runs on a real pool.
+
+    Args:
+        opening: The opening number, e.g. "123", or its full slug.
+    """
+    from collections import Counter
+
+    slug = positions.slug(positions.resolve(opening))
+    candidates = store.candidates(slug)
+    records = store.provenances(slug)
+    assessments = store.load_assessments(slug)
+
+    arrived_by: Counter = Counter()
+    no_record = 0
+    for candidate in candidates:
+        record = records.get(candidate)
+        if not record:
+            no_record += 1
+            continue
+        arrived_by[(str(record.get("via", "")), str(record.get("source", "")))] += 1
+
+    judged_by: Counter = Counter()
+    runs = set()
+    for assessment in assessments.values():
+        judged_by[(str(assessment.get("model", "")), str(assessment.get("location", "")))] += 1
+        if assessment.get("screening_run"):
+            runs.add(str(assessment["screening_run"]))
+
+    scored = {c for c in candidates if c in assessments}
+    return {
+        "opening": slug,
+        "arrived": len(candidates),
+        "arrived_by": arrived_by,
+        "no_record": no_record,
+        "assessed": len(scored),
+        "unassessed": len(candidates) - len(scored),
+        "judged_by": judged_by,
+        "screening_runs": len(runs),
+    }
+
+
 def pool_counts(opening: str) -> dict:
     """What happened to this opening's pool, counted rather than described.
 
