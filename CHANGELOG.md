@@ -10,6 +10,8 @@ happen.
 
 ## [Unreleased]
 
+## [0.9.0] - 2026-09-19
+
 ### Added
 
 - Assessments record how they were produced: the model, the region it was
