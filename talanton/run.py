@@ -122,7 +122,7 @@ def tool_failures(event) -> list[str]:
     return [str(r["error"]) for r in responses(event) if r.get("error")]
 
 
-def converse(question: str, user_id: str = "operator", app: App = app) -> Turn:
+def converse(question: str, user_id: str = "operator", agent_app: App | None = None) -> Turn:
     """Puts a question to one of the agents and reports what the turn did.
 
     Which agent is the stage's decision and not the model's. `dry_run` guards
@@ -135,8 +135,15 @@ def converse(question: str, user_id: str = "operator", app: App = app) -> Turn:
     """
     from google.adk.runners import InMemoryRunner
 
-    runner = InMemoryRunner(app=app)
-    session = asyncio.run(runner.session_service.create_session(app_name=app.name, user_id=user_id))
+    # Named differently from the module-level default, and resolved here
+    # rather than as a default argument. A default argument binds the module
+    # attribute once, at definition, so anything substituting it later — a
+    # test, most of all — is silently ignored. Referring to `app` plainly also
+    # keeps the import visible to the linter, which removed it as unused when
+    # this went through globals() and left the lookup to fail at runtime.
+    app_to_run = agent_app or app
+    runner = InMemoryRunner(app=app_to_run)
+    session = asyncio.run(runner.session_service.create_session(app_name=app_to_run.name, user_id=user_id))
     said: list[str] = []
     errors: list[str] = []
     delivered: list[str] = []
@@ -171,9 +178,9 @@ def converse(question: str, user_id: str = "operator", app: App = app) -> Turn:
     return Turn(text=text, delivered=tuple(delivered), declined=tuple(declined))
 
 
-def ask(question: str, user_id: str = "operator", app: App = app) -> str:
+def ask(question: str, user_id: str = "operator", agent_app: App | None = None) -> str:
     """Puts a question to one of the agents and returns its final text."""
-    return converse(question, user_id, app).text
+    return converse(question, user_id, agent_app).text
 
 
 # ---------------------------------------------------------------- core stages
@@ -200,7 +207,7 @@ def assess(role: str, rescreen: bool = False) -> str:
     # into. Delivery belongs to `shortlist`, which says so in its name.
     slug = positions.slug(positions.resolve(role))
     with screening.run_recorded() as screening_run:
-        said = ask(prompt.format(role=role), user_id="system", app=assessor_app)
+        said = ask(prompt.format(role=role), user_id="system", agent_app=assessor_app)
 
     # The agent's own account of what it did is not evidence that it did it.
     # An LLM always produces text, so checking that it spoke — which is what
@@ -271,8 +278,14 @@ def shortlist(role: str) -> str:
     declined, the report goes out anyway with the counts — an operator who
     receives nothing cannot tell that from a pipeline that failed silently.
     """
-    turn = converse(SHORTLIST_PROMPT.format(role=role), user_id="system")
-    if not turn.delivered:
+    from . import tools
+
+    # Two sources, because delivery can be established in two places and the
+    # stream is the one that cannot see the ordinary path: `send_digest` is
+    # reached through the correspondent, whose events `AgentTool` consumes.
+    with tools.deliveries_recorded() as delivered:
+        turn = converse(SHORTLIST_PROMPT.format(role=role), user_id="system")
+    if not (turn.delivered or delivered):
         report(role, turn)
     return turn.text
 

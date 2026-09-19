@@ -10,6 +10,23 @@ happen.
 
 ## [Unreleased]
 
+### Fixed
+
+- `shortlist` no longer follows a delivered shortlist with a report
+  contradicting it. Both carried the same subject a minute apart, and an
+  operator reading the later one as the truer one drops a candidate who
+  cleared the bar.
+
+  Delivery was read back from the runner's event stream, and `send_digest` is
+  held by the correspondent — which `AgentTool` runs in a runner of its own,
+  consuming those events and returning only text. No event the outer stream
+  carried could ever say a digest went out, so the standing report fired on
+  every successful run. It is now recorded where the delivery happens.
+
+  A run that genuinely delivered nothing still reports, which is the point of
+  the report: silence cannot distinguish an empty pool from a broken run.
+
+
 ## [0.9.0] - 2026-09-19
 
 ### Added
