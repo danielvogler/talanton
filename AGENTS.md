@@ -529,7 +529,7 @@ assess it as written.
 | `init` | Scaffold config, directories and gitignore. Idempotent, overwrites nothing. |
 | `secret <side>` | Put a mailbox app password into Secret Manager, read from stdin and never echoed. Prints the config line and the IAM grant. *(needs the `[secrets]` extra and a GCP project)* |
 | `check` | Config loads, the configured locations resolve, openings validate, and a Vertex project and location are set if one is configured. It does not call the model, so a reachable-looking `check` is not proof the model id is served. **Run this first, always.** |
-| `status [role]` | What is in each location: CVs waiting, who is assessed, who the filter held back. |
+| `status [role]` | What is in each location: CVs waiting, who is assessed, who the filter held back. `--full` adds the pool above the roster — how candidates arrived and from where, how many of them were scored, and which model judged them. That is the set of questions worth asking before a shortlist goes out. |
 | `show <opening> <candidate>` | One assessment in full — score, per-dimension, facts, knockouts, what to ask at a call. The only place a name is printed. |
 | `positions` | List and validate the opening files, and catch two openings sharing a number. |
 | `ads <role>` | Paste-ready board copy for LinkedIn, Indeed and jobs.ch, length-checked. |

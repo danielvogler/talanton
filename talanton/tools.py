@@ -46,6 +46,21 @@ DOCUMENT_HEADING = "=== document {ordinal} of {total}: {name} ==="
 DOCUMENT_UNREADABLE = "[this document could not be read: {reason}]"
 
 
+def version() -> str:
+    """The installed talanton version, or empty if it cannot be determined.
+
+    Read from the installed metadata rather than a constant, so a record cannot
+    claim a version the running code is not.
+    """
+    from importlib.metadata import PackageNotFoundError
+    from importlib.metadata import version as installed
+
+    try:
+        return installed("talanton")
+    except PackageNotFoundError:
+        return ""
+
+
 def jsonable(value: Any) -> Any:
     """Makes a parsed position safe to hand to a model.
 
@@ -319,6 +334,10 @@ def save_assessment(opening: str, cv: str, assessment: dict) -> dict:
     candidate = store.candidate_id(cv)
     match = next((i for i in store.list_cvs(slug) if i.name == cv), None)
 
+    # Added here, after the screener's answer, so nothing a model writes can
+    # forge them: an assessment claiming a model it did not come from would be
+    # worse than one claiming nothing.
+    active = current().screening
     record = {
         **assessment_module.normalise(assessment),
         "candidate": candidate,
@@ -327,6 +346,13 @@ def save_assessment(opening: str, cv: str, assessment: dict) -> dict:
         "opening": position["opening"],
         "role": position["id"],
         "assessed_on": date.today().isoformat(),
+        # How this judgement was produced. A score is a particular model's
+        # reading of a particular rubric, and "was the whole pool judged the
+        # same way?" is unanswerable without these three.
+        "model": active.model or screening.BY_HAND,
+        "location": active.location,
+        "talanton": version(),
+        "screening_run": screening.current_run(),
     }
     written = store.save_assessment(candidate, record, slug)
     reasons = screening.exclusions(record, position)
@@ -434,6 +460,55 @@ def missing_facts(assessment: dict) -> set[str]:
     """
     facts = assessment.get("facts") or {}
     return {f for f in EXPECTED_FACTS if facts.get(f) in UNANSWERED}
+
+
+def pool_summary(opening: str) -> dict:
+    """The pool rather than the roster: how it arrived, and how it was judged.
+
+    Three questions precede a shortlist and none of them were answerable from
+    `status`: did everything that arrived get scored, how did it arrive, and
+    was the whole pool judged the same way. Each was a throwaway script.
+
+    Reads one listing per location rather than one per candidate, because this
+    is the command somebody runs on a real pool.
+
+    Args:
+        opening: The opening number, e.g. "123", or its full slug.
+    """
+    from collections import Counter
+
+    slug = positions.slug(positions.resolve(opening))
+    candidates = store.candidates(slug)
+    records = store.provenances(slug)
+    assessments = store.load_assessments(slug)
+
+    arrived_by: Counter = Counter()
+    no_record = 0
+    for candidate in candidates:
+        record = records.get(candidate)
+        if not record:
+            no_record += 1
+            continue
+        arrived_by[(str(record.get("via", "")), str(record.get("source", "")))] += 1
+
+    judged_by: Counter = Counter()
+    runs = set()
+    for assessment in assessments.values():
+        judged_by[(str(assessment.get("model", "")), str(assessment.get("location", "")))] += 1
+        if assessment.get("screening_run"):
+            runs.add(str(assessment["screening_run"]))
+
+    scored = {c for c in candidates if c in assessments}
+    return {
+        "opening": slug,
+        "arrived": len(candidates),
+        "arrived_by": arrived_by,
+        "no_record": no_record,
+        "assessed": len(scored),
+        "unassessed": len(candidates) - len(scored),
+        "judged_by": judged_by,
+        "screening_runs": len(runs),
+    }
 
 
 def pool_counts(opening: str) -> dict:

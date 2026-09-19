@@ -6,6 +6,7 @@
     talanton positions          list and validate the open positions
     talanton ads <opening>      paste-ready board copy, to stdout
     talanton status [opening]   every opening and where each one stands
+    talanton status --full      ... and how the pool arrived and what judged it
     talanton show <opening> <candidate>
                                    one assessment, in full, readable
 
@@ -37,6 +38,10 @@ from pathlib import Path
 from . import config, locations, positions
 
 EXIT_FAILURE = 1
+# Commands that say something useful with no deployment configured, so warning
+# about its absence would only be noise. `check` reports it itself, and `init`
+# is how you get one.
+WITHOUT_A_DEPLOYMENT = ("init", "check", "secret", "drive-folder")
 VERTEX_VARS = ("GOOGLE_CLOUD_PROJECT", "GOOGLE_CLOUD_LOCATION")
 
 
@@ -479,6 +484,8 @@ def cmd_status(args: argparse.Namespace) -> int:
         excluded = tools.list_excluded(slug)["excluded"]
 
         print(f"\nopening {position['opening']} — {position['title']}, closes {position['closes']}")
+        if args.full:
+            _print_pool(tools.pool_summary(slug))
         print(
             f"  {len(store.candidates(slug))} candidate(s), {waiting['count']} unassessed, "
             f"{len(candidates)} shortlistable, {len(excluded)} held back"
@@ -492,6 +499,26 @@ def cmd_status(args: argparse.Namespace) -> int:
         for row in excluded:
             print(f"      ·   {row['candidate']}  held back: {', '.join(row['reasons'])}")
     return 0
+
+
+def _print_pool(pool: dict) -> None:
+    """The pool above the roster: how it arrived, and what judged it."""
+    print(f"  arrived     {pool['arrived']}")
+    for (via, source), count in sorted(pool["arrived_by"].items(), key=lambda kv: (-kv[1], kv[0])):
+        print(f"      {count:>4}  {via or '?':<8} {source}")
+    if pool["no_record"]:
+        print(f"      {pool['no_record']:>4}  no arrival record — stored before one was kept")
+
+    print(f"  assessed    {pool['assessed']} of {pool['arrived']}", end="")
+    print(f", {pool['unassessed']} not yet" if pool["unassessed"] else "")
+    for model, where in sorted(pool["judged_by"]):
+        count = pool["judged_by"][(model, where)]
+        served = f" in {where}" if where else ""
+        print(f"      {count:>4}  {model or '?'}{served}")
+    if pool["judged_by"] and len(pool["judged_by"]) > 1:
+        print("            more than one model judged this pool; the standard was not uniform")
+    if pool["screening_runs"]:
+        print(f"  runs        {pool['screening_runs']} screening run(s) behind those assessments")
 
 
 def cmd_show(args: argparse.Namespace) -> int:
@@ -518,6 +545,9 @@ def cmd_show(args: argparse.Namespace) -> int:
     print(f"  cv          {assessment.get('cv', '')}")
     print(f"  open it     {assessment.get('cv_uri', '')}")
     print(f"  assessed    {assessment.get('assessed_on', '')}")
+    if assessment.get("model"):
+        served = f" in {assessment['location']}" if assessment.get("location") else ""
+        print(f"  judged by   {assessment['model']}{served}, talanton {assessment.get('talanton', '?')}")
 
     arrival = store.provenance(args.candidate, slug)
     if arrival:
@@ -858,6 +888,12 @@ def build_parser() -> argparse.ArgumentParser:
 
     status = sub.add_parser("status", help="what is in each location")
     status.add_argument("opening", nargs="?", help="an opening number; omit for all")
+    status.add_argument(
+        "--full",
+        action="store_true",
+        help="add the pool above the roster: how candidates arrived, how many were scored, "
+        "and what judged them",
+    )
     status.set_defaults(func=cmd_status)
 
     show = sub.add_parser("show", help="one assessment, in full")
@@ -963,6 +999,16 @@ def main(argv: list[str] | None = None) -> int:
     config.load_dotenv()
     if args.config:
         config.use(config.load(args.config))
+    elif args.command not in WITHOUT_A_DEPLOYMENT and config.find() is None:
+        # Running on defaults is supported — it is how somebody tries the tool
+        # out. What is not supported is doing it by accident: an unset
+        # TALANTON_CONFIG reads an empty location, and an empty location is
+        # indistinguishable from a quiet week.
+        print(
+            "note  no talanton.toml found here or above; running on defaults, not a deployment.\n"
+            "      If you meant to use one, set TALANTON_CONFIG or pass --config.",
+            file=sys.stderr,
+        )
     # The model client reads the project and region from the environment at
     # call time, so put them there before any stage runs.
     config.apply_environment(config.current())

@@ -188,6 +188,8 @@ def assess(role: str, rescreen: bool = False) -> str:
             standard applies to the whole pool rather than only to whoever
             arrives next.
     """
+    from . import positions, screening, store
+
     prompt = RESCREEN_PROMPT if rescreen else ASSESS_PROMPT
     # `assessor`, not the root agent, and this is the whole of the guarantee.
     # The root agent reaches the correspondent, and the correspondent has the
@@ -196,7 +198,70 @@ def assess(role: str, rescreen: bool = False) -> str:
     # the same screener and the same rubric and no correspondent at all, so
     # there is nothing to delegate to and nothing for a prompt to talk its way
     # into. Delivery belongs to `shortlist`, which says so in its name.
-    return ask(prompt.format(role=role), user_id="system", app=assessor_app)
+    slug = positions.slug(positions.resolve(role))
+    with screening.run_recorded() as screening_run:
+        said = ask(prompt.format(role=role), user_id="system", app=assessor_app)
+
+    # The agent's own account of what it did is not evidence that it did it.
+    # An LLM always produces text, so checking that it spoke — which is what
+    # this used to do — could never fail for the case it was written for: a run
+    # that assessed a fraction of the pool and summarised that fraction as the
+    # whole of it.
+    missed, unreadable = _not_covered(slug, screening_run, rescreen)
+    if unreadable:
+        # Not a failure, and never was: nothing is saved for a document that
+        # cannot be read, so it stays in the queue for good. Counting that as
+        # work not done would fail every run from the first scan onwards.
+        logging.warning(
+            "%d candidate(s) are unreadable and have no assessment: %s. "
+            "Open them yourself, or ask for a file with a text layer.",
+            len(unreadable),
+            ", ".join(unreadable),
+        )
+    if missed:
+        total = len(store.candidates(slug))
+        raise StageFailedError(
+            f"the run reported success having left {len(missed)} of {total} candidate(s) "
+            f"{'unreassessed' if rescreen else 'unassessed'}. What it said it did:\n{said}"
+        )
+    return said
+
+
+def _not_covered(opening: str, screening_run: str, rescreen: bool) -> tuple[list[str], list[str]]:
+    """What this run should have reached and did not, and what it never could.
+
+    A plain run is measured by the queue: anything still waiting was not done.
+    A rescreen empties nothing — everybody already has an assessment — so it is
+    measured by whether each assessment carries this run's id. Not by the date,
+    which a rescreen on the day of the original would satisfy without having
+    reassessed anybody.
+
+    Whatever is left over is then read, and only the leftovers. A candidate
+    whose documents yield no text never gets an assessment by design, so it
+    would otherwise sit in the queue failing every future run — one scan in a
+    pool would make the stage permanently red. The reading is bounded by what
+    was missed rather than by the size of the pool.
+    """
+    from . import store, tools
+
+    if rescreen:
+        assessments = store.load_assessments(opening)
+        left = [
+            candidate
+            for candidate in store.candidates(opening)
+            if assessments.get(candidate, {}).get("screening_run") != screening_run
+        ]
+    else:
+        left = [row["candidate"] for row in tools.list_new_cvs(opening)["waiting"]]
+
+    missed, unreadable = [], []
+    for candidate in left:
+        documents = store.documents_for(candidate, opening)
+        if documents and tools.get_cv_text(opening, documents[0].name).get("unreadable"):
+            unreadable.append(candidate)
+        else:
+            missed.append(candidate)
+    return missed, unreadable
 
 
 def shortlist(role: str) -> str:
