@@ -739,10 +739,20 @@ next version.
 - **Knockouts are enforced in code.** If a candidate is being filtered wrongly,
   fix the rubric with [`/review-filter`](.claude/commands/review-filter.md).
   Never route around the filter.
-- **Candidate data never lands in this repository.** `.gitignore` covers `cvs/`,
-  `assessments/`, `data/` and a root `talanton.toml`, and a gitleaks pre-commit
-  hook runs on every commit. Nothing scans for a stray CV automatically, so if
-  you put one somewhere new, gitignore it in the same change.
+- **Candidate data never lands in this repository, and that includes writing
+  about one.** Not a CV, and not a real person's name, filename or address in
+  code, a comment, a test, a commit message, the changelog or these docs. This
+  is the one that gets missed: the rule reads as being about files, and then a
+  real applicant's document name ends up in a release note as an illustration.
+  Every example here is an invented person — take one from `example/cvs/`
+  rather than from whatever you happen to be looking at.
+
+  `.gitignore` covers `cvs/`, `assessments/`, `data/` and a root
+  `talanton.toml`. Two pre-commit hooks back it: gitleaks for credentials, and
+  `scripts/refuse_candidate_data.py`, which refuses a document staged outside
+  `example/cvs/` and any address that is not a reserved placeholder. Neither
+  can recognise a real *name*, so that part is yours. If you put candidate data
+  somewhere new, gitignore it in the same change.
 - **One identity per deployment, and it is not a person.** Where a service
   account exists, every run goes through it, yours included. See *Whose
   identity talanton runs as*. A CV fetched under a personal login is readable

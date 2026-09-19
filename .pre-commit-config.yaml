@@ -35,3 +35,14 @@ repos:
     rev: v8.21.2
     hooks:
       - id: gitleaks
+
+  # gitleaks finds credentials. This finds people: a CV saved somewhere new, or
+  # a real address pasted into a test. Neither can find a real name in prose —
+  # that is the rule in AGENTS.md, and this is the floor under it.
+  - repo: local
+    hooks:
+      - id: refuse-candidate-data
+        name: Refuse candidate data
+        entry: python scripts/refuse_candidate_data.py
+        language: system
+        pass_filenames: true
