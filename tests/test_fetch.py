@@ -30,19 +30,78 @@ def test_an_attachment_becomes_a_cv(position):
 
 def test_two_people_with_the_same_filename_do_not_collide():
     """Both must survive; one silently overwriting the other loses an applicant."""
-    first = inbound.cv_filename("anna@example.test", "cv.pdf")
-    second = inbound.cv_filename("bob@example.test", "cv.pdf")
-    assert first != second
-    assert first == "anna-cv.pdf"
+    assert inbound.application_id("anna@example.test") != inbound.application_id("bob@example.test")
 
 
-def test_a_sender_without_an_address_still_gets_a_name():
-    assert inbound.cv_filename("", "cv.pdf") == "unknown-cv.pdf"
+def test_one_persons_documents_all_belong_to_that_person():
+    """Why the key is the sender and not the filename: a filename separates two
+    people, and can never join one person's three files."""
+    assert inbound.application_id("anna@example.test") == inbound.application_id(" Anna@Example.Test ")
+
+
+def test_two_messages_without_a_sender_are_not_the_same_candidate():
+    """Collapsing every anonymous application into one would lose all but the
+    last of them, which is worse than a candidate with no address."""
+    assert inbound.application_id("", "11") != inbound.application_id("", "12")
 
 
 def test_a_fetched_cv_lands_in_the_cvs_location(position):
-    store.cvs().write(inbound.cv_filename("anna@example.test", "cv.txt"), LONG.encode())
-    assert [i.name for i in store.list_cvs()] == ["anna-cv.txt"]
+    candidate = inbound.application_id("anna@example.test")
+    store.write_documents(candidate, [("cv.txt", LONG.encode())])
+    assert [i.name for i in store.list_cvs()] == [f"{candidate}.txt"]
+
+
+def test_three_attachments_from_one_person_are_one_candidate(position, monkeypatch):
+    """The bug this fixes: the covering letter scored near zero and appeared in
+    the shortlist as a weak applicant who does not exist, and the certificates
+    came back unreadable."""
+    raw = _multipart("anna@example.test", {"cv.txt": LONG, "cover-letter.txt": LONG, "certs.txt": LONG})
+    monkeypatch.setattr(inbound, "client", lambda: _FakeSession([raw]))
+    inbound.fetch()
+    assert len(store.candidates("101-ai-engineer")) == 1
+
+
+def test_all_three_documents_are_kept_not_just_the_first(position, monkeypatch):
+    raw = _multipart("anna@example.test", {"cv.txt": LONG, "cover-letter.txt": LONG, "certs.txt": LONG})
+    monkeypatch.setattr(inbound, "client", lambda: _FakeSession([raw]))
+    inbound.fetch()
+    candidate = inbound.application_id("anna@example.test")
+    assert len(store.documents_for(candidate, "101-ai-engineer")) == 3
+
+
+def test_fetch_records_how_an_application_arrived(position, monkeypatch):
+    """It knows the sender and the date at the point it used to discard them."""
+    raw = _multipart("anna@example.test", {"cv.txt": LONG})
+    monkeypatch.setattr(inbound, "client", lambda: _FakeSession([raw]))
+    inbound.fetch()
+    record = store.provenance(inbound.application_id("anna@example.test"), "101-ai-engineer")
+    assert record["via"] == "mailbox"
+    assert record["source"] == "anna@example.test"
+    assert record["arrived"]
+
+
+def test_a_forwarded_application_is_distinguishable_from_a_direct_one(position, monkeypatch):
+    """The whole argument for recording the route: byte for byte these two are
+    identical in the store, and the difference only existed in the mailbox."""
+    raw = _multipart("operator@example.com", {"cv.txt": LONG})
+    monkeypatch.setattr(inbound, "client", lambda: _FakeSession([raw]))
+    inbound.fetch()
+    record = store.provenance(inbound.application_id("operator@example.com"), "101-ai-engineer")
+    assert record["source"] == "operator@example.com"
+
+
+def _multipart(sender: str, files: dict[str, str]) -> bytes:
+    """One message carrying several documents, as a real application does."""
+    from email.message import EmailMessage
+
+    msg = EmailMessage()
+    msg["From"] = sender
+    msg["Delivered-To"] = "ai-engineer@example.com"
+    msg["Subject"] = "Application"
+    msg.set_content("Please find my application attached.")
+    for name, text in files.items():
+        msg.add_attachment(text.encode(), maintype="text", subtype="plain", filename=name)
+    return msg.as_bytes()
 
 
 def test_a_flood_is_capped_and_the_rest_left_for_the_next_run(configure, position, monkeypatch):

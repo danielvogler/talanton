@@ -232,3 +232,73 @@ def test_the_assessor_is_told_everything_the_root_agent_is_told():
     assert body in agent.root_agent.instruction
     assert body in agent.assessor.instruction
     assert "cannot send anything" in agent.assessor.instruction
+
+
+# --------------------------------------------------------------------------
+# Which agent a stage actually runs. `dry_run` is a guard on delivery, not on
+# capability, and it is not the thing that should be keeping `assess` quiet.
+# --------------------------------------------------------------------------
+
+
+def test_assessing_runs_an_agent_with_no_path_to_an_outbox(monkeypatch):
+    """Observed with dry_run off: `assess --rescreen` mailed the shortlist to
+    both operators, from a command whose name says nothing about sending. Every
+    stage shared one toolset, so the agent could delegate its way to the
+    correspondent, and `dry_run` was the only thing in the way."""
+    from talanton import agent, run
+
+    seen = {}
+
+    def _capture(question, user_id="operator", app=agent.app):
+        seen["app"] = app
+        return run.Turn(text="assessed")
+
+    monkeypatch.setattr(run, "converse", _capture)
+    run.assess("101")
+    assert seen["app"] is agent.assessor_app
+
+
+def test_rescreening_runs_that_same_agent(monkeypatch):
+    """The rescreen is the path it was actually observed on."""
+    from talanton import agent, run
+
+    seen = {}
+    monkeypatch.setattr(
+        run, "converse", lambda q, user_id="operator", app=agent.app: seen.update(app=app) or run.Turn(text="x")
+    )
+    run.assess("101", rescreen=True)
+    assert seen["app"] is agent.assessor_app
+
+
+def test_the_shortlist_still_runs_the_agent_that_can_deliver(monkeypatch):
+    """The fix must not make the sending stage unable to send."""
+    from talanton import agent, run
+
+    seen = {}
+    monkeypatch.setattr(
+        run,
+        "converse",
+        lambda q, user_id="operator", app=agent.app: seen.update(app=app)
+        or run.Turn(text="x", delivered=("you@example.com",)),
+    )
+    run.shortlist("101")
+    assert seen["app"] is agent.app
+
+
+def test_the_assessing_app_reaches_no_tool_that_sends():
+    """Structural, not behavioural: whatever the model decides to call, there
+    is nothing in reach that has an outbox."""
+    from talanton import agent
+
+    def reachable(a, seen=None):
+        seen = seen if seen is not None else set()
+        for tool in a.tools:
+            inner = getattr(tool, "agent", None)
+            if inner is not None:
+                reachable(inner, seen)
+                continue
+            seen.add(getattr(tool, "__name__", getattr(tool, "name", "?")))
+        return seen
+
+    assert "send_digest" not in reachable(agent.assessor_app.root_agent)
+    assert "send_digest" in reachable(agent.app.root_agent), "the sending path must still exist somewhere"

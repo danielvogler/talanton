@@ -134,6 +134,40 @@ class LocationSpec:
 
 
 @dataclass(frozen=True)
+class Shortlist:
+    """What the shortlist mail is allowed to carry.
+
+    Identity is the one thing it withholds by default. Not because a law
+    forbids naming a candidate to the people deciding — none does — but because
+    email has no access control: a name in an inbox is forwarded, archived and
+    outside the drive's membership model, and cannot be taken back. A link
+    leaves identity behind a permission that can be granted and revoked.
+
+    A deployment that would rather have readable mail can say so here, and
+    should write down that it did. Two things make it a smaller decision than
+    it sounds: a short operator list at a domain you control, and the knowledge
+    that `check` warns the allowlist matches a domain rather than an address,
+    so a typo at a permitted domain is a real recipient.
+    """
+
+    names: bool = False
+
+
+@dataclass(frozen=True)
+class Intake:
+    """Which routes an application may reach the pipeline by.
+
+    The mailbox is always one. Whether to have a second is a policy decision
+    and not the tool's to make, so it is off until a deployment says otherwise:
+    an operator who has decided every application must arrive at one address
+    should not find a command that quietly relaxes it.
+    """
+
+    # `import` is a keyword, so the field cannot share the config key's name.
+    allow_import: bool = False
+
+
+@dataclass(frozen=True)
 class Schedule:
     """How often the sweep runs. How often is a deployment's decision.
 
@@ -165,6 +199,8 @@ class Config:
     outbound: Outbound = field(default_factory=Outbound)
     screening: Screening = field(default_factory=Screening)
     schedule: Schedule = field(default_factory=Schedule)
+    intake: Intake = field(default_factory=Intake)
+    shortlist: Shortlist = field(default_factory=Shortlist)
 
 
 def _section(data: dict[str, Any], name: str) -> dict[str, Any]:
@@ -277,6 +313,18 @@ def _screening(data: dict[str, Any]) -> Screening:
     )
 
 
+def _shortlist(data: dict[str, Any]) -> Shortlist:
+    """[shortlist] — whether the mail may name a candidate."""
+    section = _section(data, "shortlist")
+    return Shortlist(names=bool(section.get("names", Shortlist.names)))
+
+
+def _intake(data: dict[str, Any]) -> Intake:
+    """[intake] — whether a route other than the mailbox is permitted."""
+    section = _section(data, "intake")
+    return Intake(allow_import=bool(section.get("import", Intake.allow_import)))
+
+
 def _location(data: dict[str, Any], name: str, default_path: str) -> LocationSpec:
     """Reads one [storage.<name>] section."""
     storage = _section(data, "storage")
@@ -332,6 +380,8 @@ def parse(data: dict[str, Any], base: Path = Path()) -> Config:
         outbound=_outbound(data, inbound),
         screening=_screening(data),
         schedule=_schedule(data),
+        intake=_intake(data),
+        shortlist=_shortlist(data),
     )
 
 

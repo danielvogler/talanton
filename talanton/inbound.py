@@ -13,6 +13,7 @@ path from here to a reply.
 import email
 import email.utils
 import logging
+from datetime import UTC, datetime
 from typing import Any
 
 from imapclient import IMAPClient
@@ -22,6 +23,9 @@ from .config import current
 
 DOCUMENT_SUFFIXES = (".pdf", ".doc", ".docx", ".odt", ".rtf", ".txt", ".md")
 UNKNOWN_SENDER = "unknown"
+# How an application that came through the mailbox is recorded, against the
+# `import` that `talanton.intake` writes for one that did not.
+VIA = "mailbox"
 # Applications that match no opening. A person sorts these; nothing guesses.
 UNSORTED = "unsorted"
 
@@ -174,11 +178,35 @@ def attachments(msg: email.message.Message) -> list[tuple[str, bytes]]:
     return out
 
 
-def cv_filename(sender: str, filename: str) -> str:
-    """Namespaces an attachment by sender, so two people's `cv.pdf` do not
-    collide in the CVs location and one silently overwrite the other."""
-    stem = sender.split("@")[0] if "@" in sender else UNKNOWN_SENDER
-    return f"{stem or UNKNOWN_SENDER}-{filename}"
+def application_id(sender: str, message_id: str = "") -> str:
+    """The candidate one message's documents belong to.
+
+    Keyed on the sender rather than on each filename. Namespacing by filename
+    separates two people who both attach `cv.pdf`, which is necessary, but it
+    cannot join one person who attaches three documents — and that person then
+    becomes three candidates, two of whom do not exist and one of whom is a
+    covering letter scoring near zero against every rubric dimension.
+
+    A message with no usable sender falls back to the message itself. Every
+    anonymous application collapsing into one candidate would lose all but the
+    last, which is a worse failure than a candidate with no address.
+    """
+    address = (sender or "").strip().lower()
+    return store.candidate_id(address or f"{UNKNOWN_SENDER}-{message_id}")
+
+
+def sent_on(msg: email.message.Message) -> str:
+    """The date the message says it was sent, or empty if it does not parse.
+
+    Written by the sender's mail client, so it is a claim rather than something
+    this can vouch for — which is why the provenance record carries it beside
+    the date talanton actually read the mailbox, instead of instead of it.
+    """
+    try:
+        parsed = email.utils.parsedate_to_datetime(str(msg.get("Date", "")))
+    except (TypeError, ValueError):
+        return ""
+    return parsed.date().isoformat() if parsed else ""
 
 
 def peek() -> list[dict[str, Any]]:
@@ -200,7 +228,7 @@ def fetch() -> list[str]:
         list[str]: The CV filenames written.
     """
     session = client()
-    written = []
+    written: list[str] = []
 
     limits = current().inbound
     max_attachment_bytes = limits.max_attachment_mb * 1024 * 1024
@@ -222,7 +250,8 @@ def fetch() -> list[str]:
         for message in messages:
             msg = email.message_from_bytes(message["raw"])
             opening = opening_for(message)
-            found = False
+            candidate = application_id(message["sender"], message["id"])
+            enclosed: list[tuple[str, bytes]] = []
             oversize = False
 
             for filename, payload in attachments(msg):
@@ -240,9 +269,9 @@ def fetch() -> list[str]:
                     )
                     oversize = True
                     continue
-                written.append(store.write_cv(cv_filename(message["sender"], filename), payload, opening).name)
-                found = True
+                enclosed.append((filename, payload))
 
+            found = bool(enclosed)
             if not found and oversize:
                 # The body fallback exists for an application written in the
                 # mail itself. Reaching it here would file a covering note as
@@ -261,11 +290,24 @@ def fetch() -> list[str]:
                 if len(text) < documents.MIN_USEFUL_CHARS:
                     logging.warning("Nothing usable from %s; left unread for a person", message["sender"])
                     continue
-                written.append(
-                    store.write_cv(
-                        cv_filename(message["sender"], "application.txt"), text.encode("utf-8"), opening
-                    ).name
-                )
+                enclosed = [("application.txt", text.encode("utf-8"))]
+
+            # One message is one application, however many documents it
+            # carries, and the record says so before the mail is marked read.
+            stored = store.write_documents(candidate, enclosed, opening)
+            written.extend(item.name for item in stored)
+            store.write_provenance(
+                candidate,
+                {
+                    "arrived": datetime.now(UTC).date().isoformat(),
+                    "via": VIA,
+                    "source": message["sender"] or UNKNOWN_SENDER,
+                    "by": current().inbound.user,
+                    "sent": sent_on(msg),
+                    "documents": [item.name for item in stored],
+                },
+                opening,
+            )
 
             session.add_flags(int(message["id"]), [b"\\Seen"])
     finally:

@@ -290,3 +290,46 @@ def test_an_unrecorded_name_leaves_the_word_unknown_sayable(assessed, position, 
     cid = assessed(facts={"name": "unknown", "email": "unknown"})
     result = tools.send_digest(OPENING, f"{cid} is strong; work permit unknown.", [cid])
     assert result["sent"] is True, result.get("reason")
+
+
+# --------------------------------------------------------------------------
+# Whether the mail may name anybody is a deployment's decision. The default is
+# that it may not; turning it on is a thing somebody does deliberately.
+# --------------------------------------------------------------------------
+
+
+def test_a_name_is_refused_unless_the_deployment_permitted_it(assessed, position, sent):
+    """The default, and the reason for it: email has no access control, so a
+    name in an inbox is outside the drive membership that governs the CV."""
+    cid = assessed("anna-mueller.txt", facts={"name": "Anna Mueller"})
+    result = tools.send_digest(OPENING, f"{cid} — Anna Mueller is worth a look", [cid])
+    assert result["sent"] is False
+    assert sent == []
+
+
+def test_a_deployment_that_permitted_names_can_send_one(assessed, position, sent, configure):
+    from talanton import config
+
+    configure(shortlist=config.Shortlist(names=True))
+    cid = assessed("anna-mueller.txt", facts={"name": "Anna Mueller"})
+    result = tools.send_digest(OPENING, f"{cid} — Anna Mueller is worth a look", [cid])
+    assert result["sent"] is True
+    assert "Anna Mueller" in sent[0]["body"]
+
+
+def test_permitting_names_does_not_permit_a_new_recipient(assessed, position, sent, configure):
+    """One guard is not the other. Whoever may read the shortlist is still
+    only the operator list, names or no names."""
+    from talanton import config
+
+    configure(shortlist=config.Shortlist(names=True))
+    cid = assessed("anna-mueller.txt", facts={"name": "Anna Mueller"})
+    tools.send_digest(OPENING, f"{cid} — Anna Mueller", [cid])
+    assert [m["to"] for m in sent] == ["you@example.com"]
+
+
+def test_the_shortlist_rows_carry_where_someone_worked(assessed, position):
+    """What makes a digest skimmable. It names employers, not the candidate."""
+    assessed("anna-mueller.txt", facts={"employers": "ML Engineer, ETH Zürich; Data Engineer, Google"})
+    [row] = tools.list_candidates(OPENING)["candidates"]
+    assert "ETH Zürich" in row["employers"]

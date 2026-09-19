@@ -23,10 +23,11 @@ import logging
 import time
 from dataclasses import dataclass
 
+from google.adk.apps import App
 from google.genai import types
 
 from . import inbound
-from .agent import app
+from .agent import app, assessor_app
 from .config import current
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", force=True)
@@ -121,8 +122,13 @@ def tool_failures(event) -> list[str]:
     return [str(r["error"]) for r in responses(event) if r.get("error")]
 
 
-def converse(question: str, user_id: str = "operator") -> Turn:
-    """Puts a question to the agent and reports what the turn actually did.
+def converse(question: str, user_id: str = "operator", app: App = app) -> Turn:
+    """Puts a question to one of the agents and reports what the turn did.
+
+    Which agent is the stage's decision and not the model's. `dry_run` guards
+    delivery; it does not decide what a stage is able to do, and a stage whose
+    name says nothing about sending should not be one mistake away from an
+    outbox.
 
     Raises:
         StageFailedError: If the run errored, or produced no text at all.
@@ -165,9 +171,9 @@ def converse(question: str, user_id: str = "operator") -> Turn:
     return Turn(text=text, delivered=tuple(delivered), declined=tuple(declined))
 
 
-def ask(question: str, user_id: str = "operator") -> str:
-    """Puts a question to the agent and returns its final text."""
-    return converse(question, user_id).text
+def ask(question: str, user_id: str = "operator", app: App = app) -> str:
+    """Puts a question to one of the agents and returns its final text."""
+    return converse(question, user_id, app).text
 
 
 # ---------------------------------------------------------------- core stages
@@ -183,7 +189,14 @@ def assess(role: str, rescreen: bool = False) -> str:
             arrives next.
     """
     prompt = RESCREEN_PROMPT if rescreen else ASSESS_PROMPT
-    return ask(prompt.format(role=role), user_id="system")
+    # `assessor`, not the root agent, and this is the whole of the guarantee.
+    # The root agent reaches the correspondent, and the correspondent has the
+    # outbox — so with dry run off, an assess run that decided a shortlist was
+    # a helpful thing to produce could deliver one. It has. `assessor` holds
+    # the same screener and the same rubric and no correspondent at all, so
+    # there is nothing to delegate to and nothing for a prompt to talk its way
+    # into. Delivery belongs to `shortlist`, which says so in its name.
+    return ask(prompt.format(role=role), user_id="system", app=assessor_app)
 
 
 def shortlist(role: str) -> str:

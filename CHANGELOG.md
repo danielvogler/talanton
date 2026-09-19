@@ -10,6 +10,64 @@ happen.
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-09-19
+
+### Added
+
+- `talanton import <dir> --opening <n> --source <name>`, for applications that
+  did not arrive at the apply mailbox — a batch downloaded from a job board,
+  for instance. A loose file in the directory is one candidate; a subfolder is
+  one candidate holding every document in it. Documents are renamed to the
+  candidate id on the way in, as `fetch` does. `--dry-run` reports what would
+  be imported and writes nothing.
+
+  Off unless a deployment sets `[intake] import = true`. Whether to have a
+  second intake path is a policy decision, and the command should not make it
+  on anybody's behalf.
+
+- A provenance record beside each candidate's documents, written by `import`
+  and `fetch` alike: the date, the route, the board or sender, who ran it, and
+  which documents it covers. `talanton show` prints it. Until now nothing
+  persisted said when an application was received or by which route, so a CV
+  forwarded into the apply mailbox was indistinguishable from one a candidate
+  sent directly.
+
+- `employers` on the assessment facts — the last few employers and titles, as
+  the CV states them. A shortlist entry is easier to act on with them, and they
+  name no one.
+
+- `[shortlist] names`, off by default. The shortlist carries candidate ids and
+  CV links and refuses a summary that names anybody, because email has no
+  access control and a name in an inbox cannot be withdrawn. A deployment may
+  decide otherwise; `check` then says so on every run.
+
+### Fixed
+
+- One application carrying several documents is now one candidate. `fetch`
+  wrote one candidate per attachment, so an applicant who attached a CV, a
+  covering letter and their certificates became three candidates — the covering
+  letter scoring near zero and appearing in the shortlist as a weak applicant
+  who does not exist, the certificates coming back `unreadable`.
+
+  A message is now one application, keyed on the sender rather than on each
+  filename, and all of a candidate's documents are read and assessed together.
+  One unreadable document among several no longer loses the others. A message
+  with no usable sender still gets a candidate of its own.
+
+- `assess` has no path to an outbox. It runs the `assessor` agent, which holds
+  the same screener and rubric and no correspondent. With `dry_run = false`,
+  `assess --rescreen` was observed mailing a shortlist to both operators
+  without `shortlist` being run: every stage shared one toolset, so `dry_run`
+  was the only thing in the way. `shortlist` is unchanged and still sends.
+
+### Changed
+
+- `talanton status` counts candidates rather than files.
+
+- Stored CVs are unchanged. A candidate's first document keeps the name it
+  always had and only later documents carry a suffix, so no migration is
+  needed and existing assessments stay attached.
+
 ## [0.7.1] - 2026-09-12
 
 ### Added
