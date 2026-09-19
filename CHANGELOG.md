@@ -10,20 +10,7 @@ happen.
 
 ## [Unreleased]
 
-### Changed
-
-- Sending a digest no longer downloads every assessment in the opening three
-  times over. Emailing about eighteen candidates from a pool of seventy-two
-  took about five minutes before the mail went, because the CV links, the
-  counts and the name check each answered their own question by reading the
-  whole pool.
-
-  The links now read only the candidates being written about, the footer is
-  answered from listings alone, and the name check — which has to see every
-  recorded name, since a name leaking for somebody who was not shortlisted is
-  exactly as bad — reads the pool once rather than being one of three passes.
-  On fifty candidates, a digest about three went from 150 reads to 53, or to 3
-  where a deployment permits names and the guard does not run.
+## [0.10.0] - 2026-09-19
 
 ### Added
 
@@ -38,6 +25,20 @@ happen.
   been raised by whoever tripped over it; an assertion that the cost must not
   scale can only be satisfied by fixing the cause.
 
+### Changed
+
+- Sending a digest no longer downloads every assessment in the opening three
+  times over. Emailing about eighteen candidates from a pool of seventy-two
+  took about five minutes before the mail went, because the CV links, the
+  counts and the name check each answered their own question by reading the
+  whole pool.
+
+  The links now read only the candidates being written about, the footer is
+  answered from listings alone, and the name check — which has to see every
+  recorded name, since a name leaking for somebody who was not shortlisted is
+  exactly as bad — reads the pool once rather than being one of three passes.
+  On fifty candidates, a digest about three went from 150 reads to 53, or to 3
+  where a deployment permits names and the guard does not run.
 
 ### Fixed
 
@@ -65,9 +66,6 @@ happen.
   whether a document can be read is only knowable by reading it, and a footer
   is not the place to read every waiting application again.
 
-
-### Fixed
-
 - `shortlist` no longer follows a delivered shortlist with a report
   contradicting it. Both carried the same subject a minute apart, and an
   operator reading the later one as the truer one drops a candidate who
@@ -81,7 +79,6 @@ happen.
 
   A run that genuinely delivered nothing still reports, which is the point of
   the report: silence cannot distinguish an empty pool from a broken run.
-
 
 ## [0.9.0] - 2026-09-19
 
