@@ -247,6 +247,26 @@ def provenances(opening: str = "") -> dict[str, dict[str, Any]]:
     return out
 
 
+def provenances_for(candidates: set[str], opening: str = "") -> dict[str, dict[str, Any]]:
+    """The arrival records of named candidates only, from one listing.
+
+    The plural form reads every record in the opening, which is right when the
+    question is the whole pool and wrong when it is the handful being written
+    about. Candidates with no record are absent, exactly as in `provenances`.
+    """
+    location = cvs(opening)
+    wanted = {provenance_name(c): c for c in candidates}
+    out: dict[str, dict[str, Any]] = {}
+    for item in location.list():
+        candidate = wanted.get(item.name)
+        if candidate is None:
+            continue
+        parsed = _read_provenance(location, item, candidate)
+        if parsed is not None:
+            out[candidate] = parsed
+    return out
+
+
 def _read_provenance(location: locations.Location, item: Item, candidate: str) -> dict[str, Any] | None:
     """One record, or None if it cannot be read. A damaged one is not fatal."""
     try:
