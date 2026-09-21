@@ -333,3 +333,68 @@ def test_the_shortlist_rows_carry_where_someone_worked(assessed, position):
     assessed("anna-mueller.txt", facts={"employers": "ML Engineer, ETH Zürich; Data Engineer, Google"})
     [row] = tools.list_candidates(OPENING)["candidates"]
     assert "ETH Zürich" in row["employers"]
+
+
+def test_the_links_are_numbered(assessed, position, sent):
+    """Fifteen near-identical ids above fifteen near-identical URLs is not a
+    list a person can keep their place in. The number is what they count down."""
+    ids = [assessed() for _ in range(3)]
+    tools.send_digest(OPENING, f"{', '.join(ids)} are worth a look", ids)
+    body = sent[0]["body"]
+    assert f"1. {ids[0]}" in body
+    assert f"2. {ids[1]}" in body
+    assert f"3. {ids[2]}" in body
+
+
+def test_the_numbers_stay_in_a_column_past_nine(assessed, position, sent):
+    """Ragged numbering defeats the point: the eye scans the column, not the text."""
+    ids = [assessed() for _ in range(10)]
+    tools.send_digest(OPENING, f"{', '.join(ids)} are worth a look", ids)
+    numbered = [line for line in sent[0]["body"].splitlines() if ". c-" in line]
+    assert len(numbered) == 10
+    assert len({line.index(".") for line in numbered}) == 1, numbered
+
+
+def test_a_cv_line_carries_the_date_applied_and_the_route(assessed, position, sent):
+    """Which of twelve near-identical ids is the one from last March matters,
+    and so does whether they answered the ad or were sent by somebody."""
+    from talanton import store
+
+    cid = assessed()
+    store.write_provenance(
+        cid,
+        {"arrived": "2026-09-14", "sent": "2026-09-12", "via": "mailbox", "source": "marco@example.net"},
+        OPENING,
+    )
+    tools.send_digest(OPENING, f"{cid} is worth a look", [cid])
+    assert "applied 2026-09-12, by email" in sent[0]["body"]
+
+
+def test_the_route_never_carries_the_sender(assessed, position, sent):
+    """A mailbox record's source is the address the application came from, and
+    an address identifies as surely as a name does."""
+    from talanton import store
+
+    cid = assessed(facts={"name": "unknown", "email": "unknown"})
+    store.write_provenance(
+        cid, {"arrived": "2026-09-14", "via": "mailbox", "source": "marco@example.net"}, OPENING
+    )
+    assert tools.send_digest(OPENING, f"{cid} is worth a look", [cid])["sent"] is True
+    assert "marco@example.net" not in sent[0]["body"]
+
+
+def test_an_imported_candidate_carries_the_board_it_came_from(assessed, position, sent):
+    from talanton import store
+
+    cid = assessed()
+    store.write_provenance(cid, {"arrived": "2026-09-14", "via": "import", "source": "jobs.ch"}, OPENING)
+    tools.send_digest(OPENING, f"{cid} is worth a look", [cid])
+    assert "arrived 2026-09-14, imported from jobs.ch" in sent[0]["body"]
+
+
+def test_an_unrecorded_arrival_says_so_rather_than_going_quiet(assessed, position, sent):
+    """A CV dropped into the folder by hand has no record. Silence there reads
+    as "no date", which is a different thing from "we never wrote one down"."""
+    cid = assessed()
+    tools.send_digest(OPENING, f"{cid} is worth a look", [cid])
+    assert "arrival not recorded" in sent[0]["body"]

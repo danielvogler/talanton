@@ -681,7 +681,9 @@ def send_digest(opening: str, summary: str, candidates: list[str]) -> dict:
     checking_names = not current().shortlist.names
     pool = store.load_assessments(slug) if checking_names else None
 
-    body = f"{summary.rstrip()}\n\n{_counts_line(slug)}" + _link_block(links)
+    # Only the shortlisted, so the cost tracks the mail rather than the pool.
+    arrivals = store.provenances_for({c for c, _ in links}, slug) if links else {}
+    body = f"{summary.rstrip()}\n\n{_counts_line(slug)}" + _link_block(links, arrivals)
 
     # The whole body, not only the prose. A CV stored under the name its sender
     # gave it puts that name into the link, so checking the summary alone
@@ -825,16 +827,76 @@ def _cv_links(candidates: list[str], position: dict) -> tuple[list[tuple[str, st
     return links, refused
 
 
-def _link_block(links: list[tuple[str, str]]) -> str:
+# How an application got in, said in words an operator reads rather than the
+# value the record stores. Anything else is reported as the record spells it.
+ROUTES = {"mailbox": "by email", "import": "imported"}
+
+# An arrival record's `source` is free text where it is a board or a referrer.
+# It is rendered into a mail, so it is held to one line of reasonable length.
+MAX_SOURCE_LENGTH = 60
+
+
+def _arrival_line(record: dict[str, Any]) -> str:
+    """When one application came in and by which route.
+
+    The route, never the sender. A mailbox record's `source` is the address the
+    application arrived from, and an address identifies as surely as a name
+    does — which is why only `via` is used for that route, and why the board or
+    referrer behind an import, which identifies nobody, is.
+
+    `sent` is the date the applicant's own mail client claims; `arrived` is
+    when talanton read the mailbox. They are different claims, so they are
+    given different verbs rather than being averaged into one date.
+    """
+    if not record:
+        return "arrival not recorded"
+
+    via = str(record.get("via") or "").strip()
+    route = ROUTES.get(via) or (f"via {via}" if via else "route not recorded")
+    if via == "import" and (source := _one_line(record.get("source"))):
+        route = f"{route} from {source}"
+
+    if sent := _one_line(record.get("sent")):
+        return f"applied {sent}, {route}"
+    if arrived := _one_line(record.get("arrived")):
+        return f"arrived {arrived}, {route}"
+    return route
+
+
+def _one_line(value: Any) -> str:
+    """A recorded value as a single bounded line, or "" if there is none."""
+    if not value:
+        return ""
+    collapsed = " ".join(str(value).split())
+    return collapsed[:MAX_SOURCE_LENGTH]
+
+
+def _link_block(links: list[tuple[str, str]], arrivals: dict[str, dict[str, Any]]) -> str:
     """The CV links, appended below the agent's own text.
 
     Built here rather than written by the agent, so a link can only point at a
     CV this system actually recorded.
+
+    Numbered, because the list is read in one sitting and rarely finished in
+    one. Fifteen ids that differ only in their hex and fifteen Drive URLs that
+    differ only in their file id give the eye nothing to hold on to; "I stopped
+    after 7" is a place a person can come back to. The numbers sit in a column
+    so that scanning down them stays possible past nine.
+
+    Each carries when it came in and by which route, because "the one from
+    March, through the referral" is how an operator remembers an application
+    and an id is not.
     """
     if not links:
         return ""
-    lines = ["", "", "CVs:"]
-    for candidate, uri in links:
-        lines += [f"  {candidate}", f"    {uri}"]
+    width = len(str(len(links)))
+    indent = f"  {'':>{width}}  "
+    lines = ["", "", f"CVs ({len(links)}):"]
+    for number, (candidate, uri) in enumerate(links, start=1):
+        lines += [
+            f"  {number:>{width}}. {candidate}",
+            f"{indent}{_arrival_line(arrivals.get(candidate) or {})}",
+            f"{indent}{uri}",
+        ]
     lines += ["", "Access is controlled on the folder. If you cannot open one, you were not given access."]
     return "\n".join(lines)

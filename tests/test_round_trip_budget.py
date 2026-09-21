@@ -148,3 +148,23 @@ def test_the_pool_summary_does_not_list_once_per_candidate(position, monkeypatch
 def test_the_work_queue_does_not_list_once_per_candidate(position, monkeypatch):
     small, large = costs_as_the_pool_grows(lambda ids: tools.list_new_cvs(OPENING), monkeypatch)
     assert large.lists == small.lists, f"lists grew with the pool: {small} -> {large}"
+
+
+def test_arrival_records_are_read_only_for_the_shortlisted(position, sent, monkeypatch, configure):
+    """The CV block says when each application came in. Answering that from
+    `provenances()` would download a record for everybody on file to print
+    three lines."""
+    from talanton import config
+
+    configure(shortlist=config.Shortlist(names=True))
+
+    def send(ids):
+        for candidate in ids:
+            store.write_provenance(
+                candidate, {"arrived": "2026-09-14", "via": "import", "source": "a-board"}, OPENING
+            )
+        tools.send_digest(OPENING, f"{ids[0]} is worth a look", ids[:3])
+
+    small, large = costs_as_the_pool_grows(send, monkeypatch)
+    assert large.reads == small.reads, f"arrival records are read per candidate on file: {small} -> {large}"
+    assert large.lists == small.lists, f"lists grew: {small} -> {large}"

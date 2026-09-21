@@ -10,6 +10,26 @@ happen.
 
 ## [Unreleased]
 
+### Changed
+
+- The CV list in a shortlist mail is numbered, and carries its own count. A
+  dozen candidate ids that differ only in their hex, each above a Drive URL
+  that differs only in its file id, is a list nobody can keep their place in —
+  the number is what makes "I stopped after 7" a place to come back to. The
+  numbers are right-aligned so the column survives past nine.
+
+- Each CV in a shortlist mail says when the application came in and by which
+  route — `applied 2026-09-12, by email`, `arrived 2026-08-30, imported from
+  jobs.ch`, or `arrival not recorded` for one dropped into the folder by hand.
+  "The one from March, through the referral" is how an application is
+  remembered; a candidate id is not.
+
+  The route only, never the sender: a mailbox record's source is the address
+  the application arrived from, and an address identifies as surely as a name
+  does. The board or referrer behind an import identifies nobody and is shown.
+  The records are read for the shortlisted candidates alone, so the mail costs
+  one listing and one read per person written about rather than per CV on file.
+
 ## [0.10.0] - 2026-09-19
 
 ### Added
