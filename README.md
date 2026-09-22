@@ -4,14 +4,42 @@
 </picture>
 
 [![check](https://github.com/danielvogler/talanton/actions/workflows/check.yml/badge.svg)](https://github.com/danielvogler/talanton/actions/workflows/check.yml)
+[![PyPI](https://img.shields.io/pypi/v/talanton?style=flat&color=0E0E10&label=pypi)](https://pypi.org/p/talanton)
 [![License](https://img.shields.io/badge/license-Apache--2.0-0E0E10.svg)](./LICENSE)
 [![Python](https://img.shields.io/badge/python-3.11%2B-0E0E10.svg)](https://www.python.org/downloads/)
 [![uv](https://img.shields.io/badge/deps-uv-0E0E10.svg)](https://docs.astral.sh/uv/)
-[![ADK](https://img.shields.io/badge/agents-Google%20ADK-0E0E10.svg)](https://adk.dev)
 [![Ruff](https://img.shields.io/badge/lint-ruff-0E0E10.svg)](https://docs.astral.sh/ruff/)
 [![mypy](https://img.shields.io/badge/types-mypy-0E0E10.svg)](https://mypy-lang.org/)
 [![pre-commit](https://img.shields.io/badge/pre--commit-enabled-0E0E10.svg)](https://pre-commit.com/)
 [![gitleaks](https://img.shields.io/badge/secrets-gitleaks-0E0E10.svg)](https://github.com/gitleaks/gitleaks)
+[![ADK](https://img.shields.io/badge/agents-Google%20ADK-0E0E10.svg)](https://adk.dev)
+
+---
+
+## Start here
+
+**You do not drive talanton. A coding agent does.** Point one at
+[AGENTS.md](./AGENTS.md) and tell it what you are hiring for:
+
+```
+Read https://github.com/danielvogler/talanton/blob/main/AGENTS.md
+and set this up. We are hiring an AI engineer in Zürich.
+```
+
+That file is the runbook, written for exactly this: the questions worth asking
+before anything is configured, the install, where CVs and assessments live,
+writing the role with you, and the first cycle run by hand so you can watch it.
+You do not need to know anything about this repository to start.
+
+Nothing to clone. It is on [PyPI](https://pypi.org/p/talanton), and your roles
+and candidates belong in your own private repository, never in this one:
+
+```bash
+uv add talanton               # in your hiring repo
+uvx talanton --help           # or just look first
+```
+
+The rest of this page is what the agent is working from.
 
 ---
 
@@ -326,20 +354,8 @@ Every one of these is a test, not a promise.
 
 ## Use it at your company
 
-**The short version: point a coding agent at [AGENTS.md](./AGENTS.md) and tell
-it what you are hiring for.**
-
-```
-Read https://github.com/danielvogler/talanton/blob/main/AGENTS.md
-and set this up. We are hiring an AI engineer in Zürich.
-```
-
-That file is written for exactly this — the questions worth asking before
-anything is configured, the install, the Drive folder, writing the role with
-you, and the first cycle run by hand so you can watch it. You do not need to
-know anything about this repository to start.
-
-The rest of this page is what the agent is working from.
+[AGENTS.md](./AGENTS.md) is the runbook, and an agent reading it does
+everything below for you. This section is what it will be doing.
 
 This repository is the engine. It holds no roles, no candidates and no company
 names. Yours go in a private repository that installs this one.
