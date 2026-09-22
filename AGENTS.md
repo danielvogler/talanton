@@ -692,6 +692,25 @@ uv run pre-commit run --all-files
 Ruff, ruff-format, mypy and gitleaks all run on commit and again in CI, so
 there is no point deferring them. `uv run pytest -q` must pass too.
 
+### The changelog is written at release time, not on the branch
+
+**A feature branch does not touch `CHANGELOG.md`.** One file, one `Unreleased`
+block, and every branch appending to the top of it: six open pull requests
+meant six merge conflicts in the same six lines, none of which taught anybody
+anything. The entry is not the work, and it is cheaper to write once, later.
+
+What the release does instead: read `git log --no-merges <last tag>..main` and
+write the section from it. Commit messages in this repository carry the why —
+that is the whole convention — so the section is a rewrite of what is already
+there for a reader who was not in the room, not an act of memory.
+
+`Unreleased` therefore stays empty between releases, and the release workflow
+refuses a tag whose version has no section, so the rule cannot be skipped
+quietly. If this repository ever has several people landing work in the same
+week, the upgrade is news fragments — one file per change under `changelog.d/`,
+assembled by towncrier or scriv — and not a return to editing one file from
+every branch.
+
 ### Releasing it
 
 Consumers pin talanton in a lockfile of their own, so a release is the only way
@@ -706,8 +725,10 @@ either is not — a version on PyPI can be yanked but never replaced:
 
 1. `version` in `pyproject.toml` is the version you are about to tag.
 2. `CHANGELOG.md` has a `## [X.Y.Z]` section, written for somebody who was not
-   in the room. Rehearse it with `scripts/changelog-section.sh X.Y.Z`, which is
-   the same script that renders the release notes.
+   in the room — written now, in the release pull request, from
+   `git log --no-merges <last tag>..main`. Rehearse it with
+   `scripts/changelog-section.sh X.Y.Z`, which is the same script that renders
+   the release notes.
 
 ```bash
 # on main, tree clean, check green
