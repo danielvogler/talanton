@@ -10,6 +10,25 @@ happen.
 
 ## [Unreleased]
 
+## [0.11.0] - 2026-09-22
+
+### Added
+
+- `SECURITY.md`: how to report a vulnerability privately, what this repository
+  guards and how, and what to do if candidate data ever reaches it — which is
+  not the same remediation as a leaked credential, because a password can be
+  rotated and a person's CV cannot.
+- `GEMINI.md`, alongside `CLAUDE.md`: a pointer to AGENTS.md, which stays the
+  single source of truth.
+- Five guards the commit hooks were missing: `uv-lock`, so a `pyproject.toml`
+  edit cannot leave the committed lock describing a resolution that never
+  happened; `detect-private-key` and a refusal of GCP service-account key
+  files, which are ordinary JSON and which this project never creates;
+  `mixed-line-ending`; and a `commit-msg` hook rejecting AI `Co-Authored-By`
+  trailers, a rule that was written down and checked by nothing.
+- `.editorconfig`, and `.python-version` pinned to 3.11 — the floor in
+  `requires-python`, where an incompatibility shows up first.
+
 ### Changed
 
 - The CV list in a shortlist mail is numbered, and carries its own count. A
@@ -29,6 +48,39 @@ happen.
   does. The board or referrer behind an import identifies nobody and is shown.
   The records are read for the shortlisted candidates alone, so the mail costs
   one listing and one read per person written about rather than per CV on file.
+
+- The README opens with `Start here`. The one instruction that makes this
+  usable — point a coding agent at AGENTS.md — was on line 329 of 552, below
+  everything a reader has to already care about to reach it. The install is
+  there too, and a PyPI badge joins the row.
+
+- Package metadata says what the project page could not. The licence moves to
+  the SPDX form with `license-files`, the author is a name rather than a
+  handle, and the PyPI sidebar gets the source, the issues and the changelog.
+  Keywords and classifiers name every supported Python version.
+
+- CI runs the suite on 3.11, 3.12, 3.13 and 3.14. `requires-python` promised
+  four versions and one was tested, which is how a 3.11 user is the one who
+  finds the 3.11 bug. The workflow declares `permissions: contents: read`, can
+  be triggered by hand, and a second job scans the full history for secrets —
+  the pre-commit hook only ever sees the files a commit touches.
+
+- The example opening is a generic `Software Engineer`. The example is
+  documentation: its job is to teach the shape of the file — ad copy,
+  knockouts and rubric as one decision written three ways — and a
+  domain-specific role teaches that no better while implying the engine is for
+  hiring in that domain.
+
+- The changelog is written at release time rather than on every branch. One
+  file with one `Unreleased` block, appended to from each branch in flight, is
+  a merge conflict per open pull request in the same few lines. The release
+  writes the section from `git log --no-merges <last tag>..main`, which the
+  commit messages here are detailed enough to support.
+
+- Dependabot moves to monthly with a seven-day cooldown on Python packages,
+  and now covers pre-commit — the hook versions are pinned by hand, and a
+  hand-written pin is exactly what that file exists to keep honest.
+- `imapclient` moves to 4.x.
 
 ## [0.10.0] - 2026-09-19
 
@@ -327,7 +379,8 @@ happen.
   IMAP for the apply mailbox, `dry_run` on by default everywhere, and
   candidate data gitignored by `talanton init` before the first CV arrives.
 
-[Unreleased]: https://github.com/danielvogler/talanton/compare/v0.7.1...HEAD
+[Unreleased]: https://github.com/danielvogler/talanton/compare/v0.11.0...HEAD
+[0.11.0]: https://github.com/danielvogler/talanton/compare/v0.10.0...v0.11.0
 [0.7.1]: https://github.com/danielvogler/talanton/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/danielvogler/talanton/compare/v0.6.0...v0.7.0
 [0.6.0]: https://github.com/danielvogler/talanton/releases/tag/v0.6.0
