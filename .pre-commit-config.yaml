@@ -1,5 +1,9 @@
-# Install once:  uv run pre-commit install
+# Install once:  uv run pre-commit install --install-hooks
 # Run on everything:  uv run pre-commit run --all-files
+
+# The commit-msg stage has to be named here, or a hook configured for it is
+# installed nowhere and silently never runs.
+default_install_hook_types: [pre-commit, commit-msg]
 
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
@@ -14,6 +18,11 @@ repos:
       - id: check-added-large-files
         args: [--maxkb=1024]
       - id: check-case-conflict
+      # Application default credentials, an attached service account, or
+      # Secret Manager. Never a key file, and never an SSH key by accident.
+      - id: detect-private-key
+      - id: mixed-line-ending
+        args: [--fix=lf]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
     rev: v0.14.4
@@ -22,6 +31,14 @@ repos:
       - id: ruff-check
         args: [--fix]
       - id: ruff-format
+
+  - repo: https://github.com/astral-sh/uv-pre-commit
+    rev: 0.9.28
+    hooks:
+      # uv.lock is committed and consumers pin against it, so a pyproject.toml
+      # edit that leaves the lock behind is a lockfile describing something
+      # that was never resolved.
+      - id: uv-lock
 
   - repo: https://github.com/pre-commit/mirrors-mypy
     rev: v1.18.2
@@ -36,11 +53,32 @@ repos:
     hooks:
       - id: gitleaks
 
-  # gitleaks finds credentials. This finds people: a CV saved somewhere new, or
-  # a real address pasted into a test. Neither can find a real name in prose —
-  # that is the rule in AGENTS.md, and this is the floor under it.
   - repo: local
     hooks:
+      # Commits are authored by the person whose name is on them. The rule was
+      # written down and checked by nothing, which is how a trailer added by
+      # an agent survives review.
+      - id: no-agent-coauthors
+        name: no AI Co-Authored-By trailers
+        language: pygrep
+        stages: [commit-msg]
+        args: [--ignore-case, --multiline]
+        entry: 'co-authored-by:.*(claude|anthropic|copilot|cursor|gemini|codex|chatgpt|openai)'
+
+      # detect-private-key does not know what a service-account key looks
+      # like: it is ordinary JSON. This repository never creates one — cloud
+      # access is application default credentials — so the file arriving at
+      # all is the thing to refuse.
+      - id: no-gcp-service-account-keys
+        name: no GCP service-account keys
+        language: pygrep
+        files: \.json$
+        entry: '"type":\s*"service_account"'
+
+      # gitleaks finds credentials. This finds people: a CV saved somewhere
+      # new, or a real address pasted into a test. Neither can find a real name
+      # in prose — that is the rule in AGENTS.md, and this is the floor under
+      # it.
       - id: refuse-candidate-data
         name: Refuse candidate data
         entry: python scripts/refuse_candidate_data.py
