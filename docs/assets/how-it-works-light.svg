@@ -1,0 +1,61 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="434" viewBox="0 0 1200 434" role="img" aria-label="Five steps, with one participant across all of them and one store beneath four. One file per opening holds the ad, the knockouts and the rubric, written once; from it the agent produces the finished posting for each platform, customized and length-checked; applications are ingested from the mailbox or dropped in, routed, deduped and recorded; every one is assessed automatically and unattended against that same rubric; and a short, ranked account of who is worth your time comes back. You reach any step through your coding agent, and the opening, the CVs and the assessments live in storage you choose — a local folder, a Google Drive folder or a cloud bucket. Identity is recorded, never scored, talanton never writes to a candidate, and a person decides.">
+  <title>How talanton works</title>
+  <rect width="1200" height="434" fill="#FBFAF7"/>
+
+  <g font-family="Inter, Archivo, ui-sans-serif, -apple-system, Segoe UI, Helvetica, Arial, sans-serif">
+    <path d="M198 142 H321" stroke="#A8A29A" stroke-width="1.5" stroke-linecap="round"/><path d="M315 136 L321 142 L315 148" fill="none" stroke="#A8A29A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M423 142 H546" stroke="#A8A29A" stroke-width="1.5" stroke-linecap="round"/><path d="M540 136 L546 142 L540 148" fill="none" stroke="#A8A29A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M648 142 H771" stroke="#A8A29A" stroke-width="1.5" stroke-linecap="round"/><path d="M765 136 L771 142 L765 148" fill="none" stroke="#A8A29A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M873 142 H996" stroke="#A8A29A" stroke-width="1.5" stroke-linecap="round"/><path d="M990 136 L996 142 L990 148" fill="none" stroke="#A8A29A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path d="M150 40 H386" stroke="#A8A29A" stroke-width="1.5" stroke-dasharray="4 5" stroke-linecap="round"/>
+    <path d="M814 40 H1050" stroke="#A8A29A" stroke-width="1.5" stroke-dasharray="4 5" stroke-linecap="round"/>
+    <path d="M150 40 V104" stroke="#A8A29A" stroke-width="1.5" stroke-dasharray="4 5" stroke-linecap="round"/>
+    <path d="M375 40 V104" stroke="#A8A29A" stroke-width="1.5" stroke-dasharray="4 5" stroke-linecap="round"/>
+    <path d="M600 63 V104" stroke="#A8A29A" stroke-width="1.5" stroke-dasharray="4 5" stroke-linecap="round"/>
+    <path d="M825 40 V104" stroke="#A8A29A" stroke-width="1.5" stroke-dasharray="4 5" stroke-linecap="round"/>
+    <path d="M1050 40 V104" stroke="#A8A29A" stroke-width="1.5" stroke-dasharray="4 5" stroke-linecap="round"/>
+    <rect x="404" y="21" width="392" height="38" rx="19" fill="#FFFFFF" stroke="#C2542F" stroke-width="1.5"/>
+    <text x="600" y="45" font-size="14" font-weight="600" text-anchor="middle" fill="#14161A">You, through your coding agent <tspan fill="#57534E" font-weight="400">— at any step</tspan></text>
+    <path d="M150 356 H344" stroke="#A8A29A" stroke-width="1.5" stroke-dasharray="4 5" stroke-linecap="round"/>
+    <path d="M856 356 H1050" stroke="#A8A29A" stroke-width="1.5" stroke-dasharray="4 5" stroke-linecap="round"/>
+    <path d="M150 290 V356" stroke="#A8A29A" stroke-width="1.5" stroke-dasharray="4 5" stroke-linecap="round"/>
+    <path d="M600 290 V333" stroke="#A8A29A" stroke-width="1.5" stroke-dasharray="4 5" stroke-linecap="round"/>
+    <path d="M825 290 V333" stroke="#A8A29A" stroke-width="1.5" stroke-dasharray="4 5" stroke-linecap="round"/>
+    <path d="M1050 290 V356" stroke="#A8A29A" stroke-width="1.5" stroke-dasharray="4 5" stroke-linecap="round"/>
+    <rect x="362" y="337" width="476" height="38" rx="19" fill="#FFFFFF" stroke="#E7E3DC" stroke-width="1.5"/>
+    <text x="600" y="361" font-size="14" font-weight="600" text-anchor="middle" fill="#14161A">Storage you choose <tspan fill="#57534E" font-weight="400">— a folder, Google Drive, a bucket</tspan></text>
+    <rect x="118" y="110" width="64" height="64" rx="16" fill="#FFFFFF" stroke="#E7E3DC" stroke-width="1.5"/>
+    <rect x="136" y="124" width="28" height="36" rx="4" fill="none" stroke="#14161A" stroke-width="2"/><path d="M142 134 H158" stroke="#14161A" stroke-width="2" stroke-linecap="round"/><path d="M142 142 H158" stroke="#C2542F" stroke-width="2" stroke-linecap="round"/><path d="M142 150 H153" stroke="#14161A" stroke-width="2" stroke-linecap="round"/>
+    <text x="150" y="210" font-size="11.5" font-weight="600" letter-spacing="1.8" text-anchor="middle" fill="#C2542F">1</text>
+    <text x="150" y="236" font-size="16.5" font-weight="600" text-anchor="middle" fill="#14161A">Templated job opening</text>
+    <text x="150" y="260" font-size="13" text-anchor="middle" fill="#57534E">the ad, the knockouts and the</text>
+    <text x="150" y="280" font-size="13" text-anchor="middle" fill="#57534E">rubric, written once, by you</text>
+    <rect x="343" y="110" width="64" height="64" rx="16" fill="#FFFFFF" stroke="#E7E3DC" stroke-width="1.5"/>
+    <rect x="357" y="130" width="22" height="28" rx="3" fill="none" stroke="#14161A" stroke-width="2"/><rect x="365" y="126" width="22" height="28" rx="3" fill="none" stroke="#14161A" stroke-width="2"/><rect x="373" y="122" width="22" height="28" rx="3" fill="none" stroke="#C2542F" stroke-width="2"/>
+    <text x="375" y="210" font-size="11.5" font-weight="600" letter-spacing="1.8" text-anchor="middle" fill="#C2542F">2</text>
+    <text x="375" y="236" font-size="16.5" font-weight="600" text-anchor="middle" fill="#14161A">Ready for each platform</text>
+    <text x="375" y="260" font-size="13" text-anchor="middle" fill="#57534E">the finished posting for each,</text>
+    <text x="375" y="280" font-size="13" text-anchor="middle" fill="#57534E">customized and length-checked</text>
+    <rect x="568" y="110" width="64" height="64" rx="16" fill="#FFFFFF" stroke="#E7E3DC" stroke-width="1.5"/>
+    <rect x="584" y="126" width="32" height="22" rx="3" fill="none" stroke="#14161A" stroke-width="2"/><path d="M584 130 L600 141 L616 130" fill="none" stroke="#14161A" stroke-width="2" stroke-linejoin="round"/><path d="M582 156 H618" stroke="#C2542F" stroke-width="2" stroke-linecap="round"/>
+    <text x="600" y="210" font-size="11.5" font-weight="600" letter-spacing="1.8" text-anchor="middle" fill="#C2542F">3</text>
+    <text x="600" y="236" font-size="16.5" font-weight="600" text-anchor="middle" fill="#14161A">Managed ingestion</text>
+    <text x="600" y="260" font-size="13" text-anchor="middle" fill="#57534E">mailbox or dropped in, routed,</text>
+    <text x="600" y="280" font-size="13" text-anchor="middle" fill="#57534E">deduped and recorded</text>
+    <rect x="793" y="110" width="64" height="64" rx="16" fill="#FFFFFF" stroke="#E7E3DC" stroke-width="1.5"/>
+    <path d="M825 134 V156" stroke="#14161A" stroke-width="2" stroke-linecap="round"/><path d="M817 156 H833" stroke="#14161A" stroke-width="2" stroke-linecap="round"/><path d="M811 135 L839 141" stroke="#14161A" stroke-width="2" stroke-linecap="round"/><path d="M811 135 V140" stroke="#14161A" stroke-width="1.5" opacity="0.6" stroke-linecap="round"/><path d="M839 141 V147" stroke="#14161A" stroke-width="1.5" opacity="0.6" stroke-linecap="round"/><path d="M806 140 Q811 147 816 140" fill="none" stroke="#14161A" stroke-width="2" stroke-linecap="round"/><path d="M834 147 Q839 154 844 147" fill="none" stroke="#C2542F" stroke-width="2" stroke-linecap="round"/><circle cx="825" cy="134" r="2.4" fill="#14161A"/>
+    <text x="825" y="210" font-size="11.5" font-weight="600" letter-spacing="1.8" text-anchor="middle" fill="#C2542F">4</text>
+    <text x="825" y="236" font-size="16.5" font-weight="600" text-anchor="middle" fill="#14161A">Agentic assessment</text>
+    <text x="825" y="260" font-size="13" text-anchor="middle" fill="#57534E">automated and unattended,</text>
+    <text x="825" y="280" font-size="13" text-anchor="middle" fill="#57534E">the same rubric every time</text>
+    <rect x="1018" y="110" width="64" height="64" rx="16" fill="#FFFFFF" stroke="#E7E3DC" stroke-width="1.5"/>
+    <path d="M1034 130 H1038" stroke="#C2542F" stroke-width="2" stroke-linecap="round"/><path d="M1044 130 H1066" stroke="#14161A" stroke-width="2" stroke-linecap="round"/><path d="M1034 142 H1038" stroke="#C2542F" stroke-width="2" stroke-linecap="round"/><path d="M1044 142 H1066" stroke="#14161A" stroke-width="2" stroke-linecap="round"/><path d="M1034 154 H1038" stroke="#C2542F" stroke-width="2" stroke-linecap="round"/><path d="M1044 154 H1060" stroke="#14161A" stroke-width="2" stroke-linecap="round"/>
+    <text x="1050" y="210" font-size="11.5" font-weight="600" letter-spacing="1.8" text-anchor="middle" fill="#C2542F">5</text>
+    <text x="1050" y="236" font-size="16.5" font-weight="600" text-anchor="middle" fill="#14161A">Shortlist to you</text>
+    <text x="1050" y="260" font-size="13" text-anchor="middle" fill="#57534E">a short, ranked account of who</text>
+    <text x="1050" y="280" font-size="13" text-anchor="middle" fill="#57534E">is worth your time, and why</text>
+
+    <path d="M60 388 H1140" stroke="#E7E3DC" stroke-width="1.5"/>
+    <text x="600" y="414" font-size="13.5" text-anchor="middle" fill="#A8A29A">Your mailbox, your storage, your model · identity is recorded, never scored · it never writes to a candidate · <tspan fill="#C2542F" font-weight="600">a person decides</tspan></text>
+  </g>
+</svg>
