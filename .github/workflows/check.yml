@@ -7,16 +7,33 @@ on:
   # So the release workflow can run exactly this, rather than a copy of it
   # that drifts. Nothing reaches PyPI without passing the same gate main does.
   workflow_call:
+  workflow_dispatch:
+
+# Read-only by default. Nothing here writes to the repository, and a token
+# with more scope than the job needs is the difference between a compromised
+# action reading this repository and rewriting it.
+permissions:
+  contents: read
 
 jobs:
   check:
+    name: check (py${{ matrix.python-version }})
     runs-on: ubuntu-latest
+    strategy:
+      # Every version is reported, rather than the first failure hiding the
+      # other three.
+      fail-fast: false
+      matrix:
+        # `requires-python = ">=3.11"`. Promising four and testing one is how
+        # a 3.11 user finds the 3.11 bug.
+        python-version: ["3.11", "3.12", "3.13", "3.14"]
     steps:
       # Pinned to a commit, not a tag: a tag can be moved onto other code.
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       - uses: astral-sh/setup-uv@20cfd1bf945f4377ade1205e4dbc17946fc9a30d # v10.0.1
         with:
           enable-cache: true
+          python-version: ${{ matrix.python-version }}
       - run: uv sync --extra dev --extra gdrive --extra gcs
 
       # The same hooks that run on commit, so `--no-verify` cannot get past
@@ -40,3 +57,19 @@ jobs:
           uv run talanton --config example/talanton.toml check
           uv run talanton --config example/talanton.toml status
           uv run talanton --config example/talanton.toml ads ai-engineer > /dev/null
+
+  # The hook only ever sees the files a commit touches, so anything committed
+  # before it existed has never been scanned — and on this repository the thing
+  # that must not be in the history is somebody's CV.
+  secrets:
+    name: gitleaks (full history)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - name: scan the history
+        uses: gitleaks/gitleaks-action@ff98106e4c7b2bc287b24eaf42907196329070c7 # v2.3.9
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
