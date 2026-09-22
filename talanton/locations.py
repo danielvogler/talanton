@@ -84,7 +84,7 @@ class Location(Protocol):
     def child(self, name: str) -> "Location":
         """The same location, narrowed to one subfolder.
 
-        This is how an opening gets its own drawer: five AI engineer postings
+        This is how an opening gets its own drawer: five software engineer postings
         do not share a pile of CVs.
         """
         ...

@@ -56,7 +56,7 @@ jobs:
         run: |
           uv run talanton --config example/talanton.toml check
           uv run talanton --config example/talanton.toml status
-          uv run talanton --config example/talanton.toml ads ai-engineer > /dev/null
+          uv run talanton --config example/talanton.toml ads software-engineer > /dev/null
 
   # The hook only ever sees the files a commit touches, so anything committed
   # before it existed has never been scanned — and on this repository the thing

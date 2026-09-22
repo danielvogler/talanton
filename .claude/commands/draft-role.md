@@ -31,7 +31,7 @@ respect their answer.
 ## 2. Write it
 
 Create `<store>/openings/<opening>-<id>.yaml`, modelled on
-[`example/openings/101-ai-engineer.yaml`](../../example/openings/101-ai-engineer.yaml).
+[`example/openings/101-software-engineer.yaml`](../../example/openings/101-software-engineer.yaml).
 The `id` is lowercase-hyphenated and is never reused for a different role.
 
 Write `pitch` as prose for the candidate you want, not a list of technologies.

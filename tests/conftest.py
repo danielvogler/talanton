@@ -10,16 +10,16 @@ from talanton import config, outbound, store
 
 EXAMPLE = Path(__file__).resolve().parents[1] / "example"
 
-OPENING = "101-ai-engineer"
+OPENING = "101-software-engineer"
 
 POSITION = {
     "opening": 101,
-    "id": "ai-engineer",
+    "id": "software-engineer",
     "version": 1,
-    "title": "AI Engineer",
+    "title": "Software Engineer",
     "location": "Zürich, CH",
     "pitch": "We build agentic systems that do real work.",
-    "apply_to": "ai-engineer@example.com",
+    "apply_to": "software-engineer@example.com",
     "closes": "2026-11-30",
     "requirements": ["Production experience with LLM-based systems."],
     "knockouts": [{"id": "work_permit", "test": "Can work in the country the role is in."}],

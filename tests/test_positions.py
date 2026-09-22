@@ -17,18 +17,18 @@ def example(tmp_path):
 
 
 def test_the_example_openings_load(example):
-    assert example["id"] == "ai-engineer" and example["opening"] == 101
+    assert example["id"] == "software-engineer" and example["opening"] == 101
     assert example["knockouts"] and example["rubric"]
 
 
 def test_an_opening_resolves_by_number_slug_or_role(example):
     """Whatever the operator types, as long as it is unambiguous."""
-    for reference in ("101", "101-ai-engineer", "ai-engineer"):
+    for reference in ("101", "101-software-engineer", "software-engineer"):
         assert positions.resolve(reference)["opening"] == 101
 
 
 def test_a_missing_opening_lists_the_ones_that_exist(example):
-    with pytest.raises(FileNotFoundError, match="101-ai-engineer"):
+    with pytest.raises(FileNotFoundError, match="101-software-engineer"):
         positions.resolve("999")
 
 
@@ -37,13 +37,15 @@ def test_an_ambiguous_reference_is_refused_rather_than_guessed(example, tmp_path
     import yaml
 
     duplicate = {**example, "opening": 103}
-    (tmp_path / "openings" / "103-ai-engineer.yaml").write_text(yaml.safe_dump(duplicate), encoding="utf-8")
+    (tmp_path / "openings" / "103-software-engineer.yaml").write_text(
+        yaml.safe_dump(duplicate), encoding="utf-8"
+    )
     with pytest.raises(positions.AmbiguousOpeningError, match="Give the number"):
-        positions.resolve("ai-engineer")
+        positions.resolve("software-engineer")
 
 
 def test_the_slug_is_the_folder_name(example):
-    assert positions.slug(example) == "101-ai-engineer"
+    assert positions.slug(example) == "101-software-engineer"
 
 
 def test_a_position_without_an_opening_number_is_refused(tmp_path):
@@ -101,12 +103,15 @@ def test_indeed_copy_is_generated(example):
 
 
 def test_a_board_may_carry_its_own_title(example):
-    with_title = {**example, "boards": {**example["boards"], "indeed": {"title": "AI Engineer (Python, LLMs)"}}}
-    assert "TITLE: AI Engineer (Python, LLMs)" in positions.board_ad(with_title, "indeed")
+    with_title = {
+        **example,
+        "boards": {**example["boards"], "indeed": {"title": "Software Engineer (Python, LLMs)"}},
+    }
+    assert "TITLE: Software Engineer (Python, LLMs)" in positions.board_ad(with_title, "indeed")
 
 
 def test_a_salary_range_is_rendered_readably(example):
-    assert "CHF 120,000 – 150,000 per year" in positions.board_ad(example, "linkedin")
+    assert "CHF 110,000 – 140,000 per year" in positions.board_ad(example, "linkedin")
 
 
 def test_every_board_gets_copy_in_one_go(example):

@@ -541,11 +541,11 @@ if __name__ == "__main__":
     cvs = pathlib.Path(__file__).resolve().parents[1] / "example" / "cvs"
     print("building example CVs:")
     for opening, name, page in (
-        ("101-ai-engineer", "andersson-lars.pdf", andersson()),
-        ("101-ai-engineer", "dubois-camille.pdf", dubois()),
-        ("101-ai-engineer", "keller-nadia.pdf", keller()),
-        ("101-ai-engineer", "injection-attempt.pdf", injection()),
-        ("101-ai-engineer", "scanned-cv.pdf", scanned()),
+        ("101-software-engineer", "andersson-lars.pdf", andersson()),
+        ("101-software-engineer", "dubois-camille.pdf", dubois()),
+        ("101-software-engineer", "keller-nadia.pdf", keller()),
+        ("101-software-engineer", "injection-attempt.pdf", injection()),
+        ("101-software-engineer", "scanned-cv.pdf", scanned()),
         ("102-data-engineer", "okonkwo-ada.pdf", okonkwo()),
         ("102-data-engineer", "fernandez-mateo.pdf", fernandez()),
     ):

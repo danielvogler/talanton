@@ -40,7 +40,7 @@ def test_the_scanned_example_is_reported_as_unreadable():
         documents.extract(scan.name, scan.read_bytes())
 
 
-EXAMPLES = pathlib.Path(__file__).resolve().parents[1] / "example" / "cvs" / "101-ai-engineer"
+EXAMPLES = pathlib.Path(__file__).resolve().parents[1] / "example" / "cvs" / "101-software-engineer"
 
 
 def _example(name: str) -> str:

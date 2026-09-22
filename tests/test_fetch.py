@@ -57,15 +57,15 @@ def test_three_attachments_from_one_person_are_one_candidate(position, monkeypat
     raw = _multipart("anna@example.test", {"cv.txt": LONG, "cover-letter.txt": LONG, "certs.txt": LONG})
     monkeypatch.setattr(inbound, "client", lambda: _FakeSession([raw]))
     inbound.fetch()
-    assert len(store.candidates("101-ai-engineer")) == 1
+    assert len(store.candidates("101-software-engineer")) == 1
 
 
 def test_all_three_documents_are_kept_not_just_the_first(position, monkeypatch):
     raw = _multipart("anna@example.test", {"cv.txt": LONG, "cover-letter.txt": LONG, "certs.txt": LONG})
     monkeypatch.setattr(inbound, "client", lambda: _FakeSession([raw]))
     inbound.fetch()
-    [candidate] = store.candidates("101-ai-engineer")
-    assert len(store.documents_for(candidate, "101-ai-engineer")) == 3
+    [candidate] = store.candidates("101-software-engineer")
+    assert len(store.documents_for(candidate, "101-software-engineer")) == 3
 
 
 def test_fetch_records_how_an_application_arrived(position, monkeypatch):
@@ -73,8 +73,8 @@ def test_fetch_records_how_an_application_arrived(position, monkeypatch):
     raw = _multipart("anna@example.test", {"cv.txt": LONG})
     monkeypatch.setattr(inbound, "client", lambda: _FakeSession([raw]))
     inbound.fetch()
-    [candidate] = store.candidates("101-ai-engineer")
-    record = store.provenance(candidate, "101-ai-engineer")
+    [candidate] = store.candidates("101-software-engineer")
+    record = store.provenance(candidate, "101-software-engineer")
     assert record["via"] == "mailbox"
     assert record["source"] == "anna@example.test"
     assert record["arrived"]
@@ -86,8 +86,8 @@ def test_a_forwarded_application_is_distinguishable_from_a_direct_one(position, 
     raw = _multipart("operator@example.com", {"cv.txt": LONG})
     monkeypatch.setattr(inbound, "client", lambda: _FakeSession([raw]))
     inbound.fetch()
-    [candidate] = store.candidates("101-ai-engineer")
-    assert store.provenance(candidate, "101-ai-engineer")["source"] == "operator@example.com"
+    [candidate] = store.candidates("101-software-engineer")
+    assert store.provenance(candidate, "101-software-engineer")["source"] == "operator@example.com"
 
 
 def _multipart(sender: str, files: dict[str, str], message_id: str = "") -> bytes:
@@ -98,7 +98,7 @@ def _multipart(sender: str, files: dict[str, str], message_id: str = "") -> byte
     msg["From"] = sender
     if message_id:
         msg["Message-ID"] = message_id
-    msg["Delivered-To"] = "ai-engineer@example.com"
+    msg["Delivered-To"] = "software-engineer@example.com"
     msg["Subject"] = "Application"
     msg.set_content("Please find my application attached.")
     for name, text in files.items():
@@ -140,8 +140,8 @@ def _message(sender: str, filename: str, payload: bytes) -> bytes:
 
     msg = EmailMessage()
     msg["From"] = sender
-    msg["Delivered-To"] = "ai-engineer@example.com"
-    msg["To"] = "ai-engineer@example.com"
+    msg["Delivered-To"] = "software-engineer@example.com"
+    msg["To"] = "software-engineer@example.com"
     msg["Subject"] = "Application"
     msg.set_content("Please find my CV attached.")
     msg.add_attachment(payload, maintype="text", subtype="plain", filename=filename)
@@ -189,7 +189,7 @@ def _filed(raw: bytes, monkeypatch) -> list[str]:
     inbound.fetch()
     return [
         opening
-        for opening in ("101-ai-engineer", "102-data-engineer", inbound.UNSORTED)
+        for opening in ("101-software-engineer", "102-data-engineer", inbound.UNSORTED)
         if store.list_cvs(opening)
     ]
 
@@ -201,8 +201,8 @@ def test_a_sender_cannot_pick_the_opening_with_a_to_header(position, monkeypatch
     raw = _application(
         {
             "Delivered-To": "data-engineer@example.com",
-            "To": "ai-engineer@example.com",
-            "Cc": "ai-engineer@example.com",
+            "To": "software-engineer@example.com",
+            "Cc": "software-engineer@example.com",
         }
     )
     assert _filed(raw, monkeypatch) == ["102-data-engineer"]
@@ -210,7 +210,7 @@ def test_a_sender_cannot_pick_the_opening_with_a_to_header(position, monkeypatch
 
 def test_a_cc_on_its_own_files_under_unsorted(position, monkeypatch):
     """Nothing vouches for where this was delivered, so a person sorts it."""
-    raw = _application({"Cc": "ai-engineer@example.com", "To": "someone@example.test"})
+    raw = _application({"Cc": "software-engineer@example.com", "To": "someone@example.test"})
     assert _filed(raw, monkeypatch) == [inbound.UNSORTED]
 
 
@@ -218,8 +218,8 @@ def test_a_forged_delivered_to_below_the_real_one_is_ignored(position, monkeypat
     """A sender can put Delivered-To in the message they compose. The
     delivering server prepends the real one above it, so only the first counts."""
     position(opening=102, id="data-engineer", apply_to="data-engineer@example.com")
-    raw = _application({"Delivered-To": ["ai-engineer@example.com", "data-engineer@example.com"]})
-    assert _filed(raw, monkeypatch) == ["101-ai-engineer"]
+    raw = _application({"Delivered-To": ["software-engineer@example.com", "data-engineer@example.com"]})
+    assert _filed(raw, monkeypatch) == ["101-software-engineer"]
 
 
 def test_no_delivered_to_says_so_in_the_log(position, monkeypatch, caplog):
@@ -228,7 +228,7 @@ def test_no_delivered_to_says_so_in_the_log(position, monkeypatch, caplog):
     import logging
 
     with caplog.at_level(logging.WARNING):
-        _filed(_application({"To": "ai-engineer@example.com"}), monkeypatch)
+        _filed(_application({"To": "software-engineer@example.com"}), monkeypatch)
     assert "No Delivered-To" in caplog.text
 
 
@@ -244,7 +244,7 @@ def test_an_oversized_cv_does_not_become_its_covering_note(configure, position, 
 
     msg = EmailMessage()
     msg["From"], msg["Subject"] = "anna@example.test", "Application"
-    msg["Delivered-To"] = "ai-engineer@example.com"
+    msg["Delivered-To"] = "software-engineer@example.com"
     msg.set_content(LONG)  # a full covering letter, long enough to pass as a CV
     msg.add_attachment(b"x" * (2 * 1024 * 1024), maintype="text", subtype="plain", filename="cv.txt")
 
@@ -270,7 +270,7 @@ def test_one_sender_submitting_four_people_is_four_candidates(position, monkeypa
     ]
     monkeypatch.setattr(inbound, "client", lambda: _FakeSession(made))
     inbound.fetch()
-    assert len(store.candidates("101-ai-engineer")) == 4
+    assert len(store.candidates("101-software-engineer")) == 4
 
 
 def test_no_applicants_documents_are_overwritten_by_the_next_message(position, monkeypatch):
@@ -283,8 +283,8 @@ def test_no_applicants_documents_are_overwritten_by_the_next_message(position, m
     monkeypatch.setattr(inbound, "client", lambda: _FakeSession(made))
     inbound.fetch()
     bodies = [
-        store.read_cv(i, "101-ai-engineer").decode()
-        for items in store.candidates("101-ai-engineer").values()
+        store.read_cv(i, "101-software-engineer").decode()
+        for items in store.candidates("101-software-engineer").values()
         for i in items
     ]
     assert any("benjamin" in b for b in bodies)
@@ -296,7 +296,7 @@ def test_one_message_with_three_attachments_is_still_one_candidate(position, mon
     raw = _multipart("anna@example.test", {"cv.txt": LONG, "letter.txt": LONG, "certs.txt": LONG})
     monkeypatch.setattr(inbound, "client", lambda: _FakeSession([raw]))
     inbound.fetch()
-    assert len(store.candidates("101-ai-engineer")) == 1
+    assert len(store.candidates("101-software-engineer")) == 1
 
 
 def test_two_messages_from_one_person_are_two_candidates(position, monkeypatch):
@@ -309,12 +309,12 @@ def test_two_messages_from_one_person_are_two_candidates(position, monkeypatch):
     ]
     monkeypatch.setattr(inbound, "client", lambda: _FakeSession(made))
     inbound.fetch()
-    assert len(store.candidates("101-ai-engineer")) == 2
+    assert len(store.candidates("101-software-engineer")) == 2
 
 
 def test_the_sender_is_still_recorded_even_though_it_is_not_the_identity(position, monkeypatch):
     raw = _multipart("agency@example.test", {"cv.txt": LONG}, message_id="<x@ex>")
     monkeypatch.setattr(inbound, "client", lambda: _FakeSession([raw]))
     inbound.fetch()
-    [candidate] = store.candidates("101-ai-engineer")
-    assert store.provenance(candidate, "101-ai-engineer")["source"] == "agency@example.test"
+    [candidate] = store.candidates("101-software-engineer")
+    assert store.provenance(candidate, "101-software-engineer")["source"] == "agency@example.test"

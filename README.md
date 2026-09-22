@@ -23,7 +23,7 @@
 
 ```
 Read https://github.com/danielvogler/talanton/blob/main/AGENTS.md
-and set this up. We are hiring an AI engineer in Zürich.
+and set this up. We are hiring a software engineer in Zürich.
 ```
 
 That file is the runbook, written for exactly this: the questions worth asking
@@ -80,7 +80,7 @@ file that is not a CV at all:
 
 ```bash
 uv run talanton --config example/talanton.toml status   # no credentials needed
-uv run talanton --config example/talanton.toml assess ai-engineer
+uv run talanton --config example/talanton.toml assess software-engineer
 uv run talanton --config example/talanton.toml show 101 c-fa22dc05a62b00e4
 ```
 
@@ -215,12 +215,12 @@ requires, and the ad, the screening standard and the questions candidates get
 asked all move with it.
 
 ```bash
-talanton ads ai-engineer     # paste-ready copy, per board, length-checked
+talanton ads software-engineer     # paste-ready copy, per board, length-checked
 ```
 
 Over-length copy is flagged, never silently cut. Nothing posts anything
 anywhere — that step is yours, on purpose. See
-[`example/openings/101-ai-engineer.yaml`](example/openings/101-ai-engineer.yaml).
+[`example/openings/101-software-engineer.yaml`](example/openings/101-software-engineer.yaml).
 
 ---
 
@@ -238,10 +238,10 @@ configured — no Vertex, no API key. The agent reads the CV and writes the
 assessment; talanton holds the rubric, the filter and the guards:
 
 ```bash
-talanton rubric ai-engineer                       # the screening standard
-talanton next   ai-engineer                       # rubric + the next CV, fenced
-talanton record anna.txt --opening ai-engineer --from a.json
-talanton send   ai-engineer --candidates c-1a2b3c4d --summary "..."
+talanton rubric software-engineer                       # the screening standard
+talanton next   software-engineer                       # rubric + the next CV, fenced
+talanton record anna.txt --opening software-engineer --from a.json
+talanton send   software-engineer --candidates c-1a2b3c4d --summary "..."
 ```
 
 `record` runs the same knockout filter and `send` the same name check, so
@@ -250,9 +250,9 @@ writing the JSON or the prose yourself is no way past either.
 **Or a deployed agent can be**, on Vertex, unattended:
 
 ```bash
-talanton assess    ai-engineer  # assess whatever has no assessment yet
-talanton shortlist ai-engineer  # hand the operator who is worth reading
-talanton cycle     ai-engineer  # fetch, assess, shortlist. what a cron runs
+talanton assess    software-engineer  # assess whatever has no assessment yet
+talanton shortlist software-engineer  # hand the operator who is worth reading
+talanton cycle     software-engineer  # fetch, assess, shortlist. what a cron runs
 ```
 
 Either way:

@@ -20,8 +20,8 @@ def test_a_document_outside_the_example_set_is_refused():
 
 def test_the_invented_examples_are_allowed():
     """They are the whole point of example/cvs/, and are script-generated."""
-    assert not gate.document_hits([Path("example/cvs/101-ai-engineer/rossi-marco.txt")])
-    assert not gate.document_hits([Path("example/cvs/101-ai-engineer/keller-nadia.pdf")])
+    assert not gate.document_hits([Path("example/cvs/101-software-engineer/rossi-marco.txt")])
+    assert not gate.document_hits([Path("example/cvs/101-software-engineer/keller-nadia.pdf")])
 
 
 def test_a_readme_is_not_mistaken_for_a_cv():

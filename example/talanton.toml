@@ -2,7 +2,7 @@
 # Run the whole pipeline against it with no mailbox and no credentials:
 #
 #   talanton --config example/talanton.toml status
-#   talanton --config example/talanton.toml assess ai-engineer
+#   talanton --config example/talanton.toml assess software-engineer
 
 [company]
 name = "Example Co"
