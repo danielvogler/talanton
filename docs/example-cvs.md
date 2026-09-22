@@ -20,7 +20,7 @@ committed as opaque binaries, so the layouts are reviewable and reproducible:
 uv run python scripts/build_example_cvs.py
 ```
 
-## Opening 101 — AI Engineer
+## Opening 101 — Software Engineer
 
 | File | Format | What it is for |
 |---|---|---|

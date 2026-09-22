@@ -77,7 +77,7 @@ def test_saving_an_assessment_records_where_the_cv_is(cv, position):
     result = tools.save_assessment(OPENING, "anna.txt", {"overall": 8.0})
     saved = store.assessment(result["candidate"], OPENING)
     assert saved["cv"] == "anna.txt"
-    assert saved["cv_uri"] and saved["opening"] == 101 and saved["role"] == "ai-engineer"
+    assert saved["cv_uri"] and saved["opening"] == 101 and saved["role"] == "software-engineer"
     assert saved["assessed_on"]
 
 

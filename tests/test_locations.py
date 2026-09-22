@@ -284,7 +284,7 @@ def test_child_refuses_to_shadow_a_subfolder_it_cannot_see(monkeypatch):
 
     place = locations.DriveLocation(folder_id="1G750")
     with pytest.raises(locations.LocationError, match="may exist and be invisible"):
-        place.child("101-ai-engineer")
+        place.child("101-software-engineer")
 
 
 def test_child_creates_the_drawer_when_the_identity_can_see_the_whole_drive(monkeypatch):
@@ -294,20 +294,20 @@ def test_child_creates_the_drawer_when_the_identity_can_see_the_whole_drive(monk
     monkeypatch.setattr(drive, "service", lambda: service)
     monkeypatch.setattr(drive, "sees_pre_existing_files", lambda: True)
 
-    child = locations.DriveLocation(folder_id="1G750").child("101-ai-engineer")
-    assert service.files().created == [("101-ai-engineer", "1G750")]
-    assert child.folder_id == "id-101-ai-engineer"
+    child = locations.DriveLocation(folder_id="1G750").child("101-software-engineer")
+    assert service.files().created == [("101-software-engineer", "1G750")]
+    assert child.folder_id == "id-101-software-engineer"
 
 
 def test_child_reuses_a_drawer_that_is_already_there(monkeypatch):
     """Whatever the credentials are, a visible folder is walked into."""
     from talanton import drive, locations
 
-    service = FakeService(visible={"101-ai-engineer": "existing"})
+    service = FakeService(visible={"101-software-engineer": "existing"})
     monkeypatch.setattr(drive, "service", lambda: service)
     monkeypatch.setattr(drive, "sees_pre_existing_files", lambda: False)
 
-    assert locations.DriveLocation(folder_id="1G750").child("101-ai-engineer").folder_id == "existing"
+    assert locations.DriveLocation(folder_id="1G750").child("101-software-engineer").folder_id == "existing"
     assert service.files().created == []
 
 

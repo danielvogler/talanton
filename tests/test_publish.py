@@ -33,7 +33,7 @@ def test_the_header_names_the_source_file(position):
     body = publish.render(data, board="linkedin")
 
     # Assert
-    assert "101-ai-engineer.yaml" in body
+    assert "101-software-engineer.yaml" in body
 
 
 def test_the_header_says_the_file_is_generated(position):
@@ -118,7 +118,7 @@ def test_the_filename_is_the_slug(position):
     name = publish.filename(data)
 
     # Assert
-    assert name.startswith("101-ai-engineer")
+    assert name.startswith("101-software-engineer")
 
 
 def test_publishing_writes_one_file(position, configure):
@@ -220,7 +220,7 @@ def test_publishing_does_not_write_into_the_store(position, configure, tmp_path)
     publish.publish("101")
 
     # Assert
-    assert sorted(p.name for p in (tmp_path / "openings").iterdir()) == ["101-ai-engineer.yaml"]
+    assert sorted(p.name for p in (tmp_path / "openings").iterdir()) == ["101-software-engineer.yaml"]
 
 
 def test_the_default_location_is_not_the_source_directory():
@@ -266,7 +266,7 @@ def test_nothing_reads_the_published_location_back(position, configure):
     # Arrange
     configure(openings=config.LocationSpec(path="published", configured=True))
     publish.publish("101")
-    store.openings().write("101-ai-engineer.txt", b"tampered")
+    store.openings().write("101-software-engineer.txt", b"tampered")
 
     # Act
     data = publish.positions.resolve("101")
@@ -279,11 +279,11 @@ def test_an_ambiguous_reference_is_refused(position, configure):
     """`resolve` already refuses; publishing must not soften that."""
     # Arrange
     configure(openings=config.LocationSpec(path="published", configured=True))
-    position(opening=102, id="ai-engineer")
+    position(opening=102, id="software-engineer")
 
     # Act / Assert
     with pytest.raises(publish.positions.AmbiguousOpeningError):
-        publish.publish("ai-engineer")
+        publish.publish("software-engineer")
 
 
 def test_check_stays_silent_when_the_location_is_not_configured(position, capsys, configure):
@@ -339,7 +339,7 @@ def test_the_store_exposes_the_location_like_the_other_two(configure):
     assert location.backend == "local"
 
 
-@pytest.mark.parametrize("reference", ["101", "101-ai-engineer", "ai-engineer"])
+@pytest.mark.parametrize("reference", ["101", "101-software-engineer", "software-engineer"])
 def test_a_role_is_accepted_in_every_form_the_other_commands_take(reference, position, configure):
     """`positions.resolve` already does this; publishing must not narrow it."""
     # Arrange

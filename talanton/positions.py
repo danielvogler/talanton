@@ -35,9 +35,9 @@ class AmbiguousOpeningError(ValueError):
 
 
 def slug(position: dict[str, Any]) -> str:
-    """The folder name for one opening: `123-ai-engineer`.
+    """The folder name for one opening: `123-software-engineer`.
 
-    Every opening gets its own drawer in each location, so five AI engineer
+    Every opening gets its own drawer in each location, so five software engineer
     postings do not share a pile of CVs and nobody has to work out which
     applicant meant which.
     """
@@ -51,7 +51,7 @@ def path(role: str):
 def resolve(reference: str) -> dict[str, Any]:
     """Finds one opening from whatever the operator typed.
 
-    Accepts the number on its own (`123`), the full slug (`123-ai-engineer`),
+    Accepts the number on its own (`123`), the full slug (`123-software-engineer`),
     or the role id when only one opening is using it. Anything ambiguous is
     refused rather than guessed — screening someone against the wrong posting
     is not a mistake worth risking to save a few keystrokes.
@@ -102,7 +102,7 @@ def load(role: str) -> dict[str, Any]:
     """Reads and checks one position file.
 
     Args:
-        role: The position id, e.g. "ai-engineer".
+        role: The position id, e.g. "software-engineer".
 
     Returns:
         dict: The parsed position.

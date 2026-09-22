@@ -34,7 +34,7 @@ def build_pool(size: int, start: int = 0) -> list[str]:
                     "cv": name,
                     "cv_uri": f"https://drive.example.test/{candidate}",
                     "opening": 101,
-                    "role": "ai-engineer",
+                    "role": "software-engineer",
                     "overall": 7.0,
                     "facts": dict(FULL_FACTS),
                     "knockouts": {"work_permit": "pass"},

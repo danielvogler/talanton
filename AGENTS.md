@@ -33,7 +33,7 @@ Lead with the **one** thing most worth doing now, then list the rest briefly.
 Do not run a stage that spends money — screening, chasing, or sending — without
 saying what it will do and getting a yes.
 
-If they already told you what they want ("post the AI engineer role", "who
+If they already told you what they want ("post the software engineer role", "who
 applied this week"), do that instead of reciting the table. The table is for
 when they have not said.
 
@@ -647,7 +647,7 @@ costs only model calls and needs no mailbox, no Drive, no config of their own:
 
 ```bash
 uv run talanton --config <engine>/example/talanton.toml status
-uv run talanton --config <engine>/example/talanton.toml assess ai-engineer
+uv run talanton --config <engine>/example/talanton.toml assess software-engineer
 uv run talanton --config <engine>/example/talanton.toml status
 ```
 

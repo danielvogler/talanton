@@ -2,13 +2,15 @@
 # same decision written three ways.
 #
 # `opening` is the number people quote. Five postings can share the title
-# "AI Engineer"; only the number says which one, and each opening has its own
-# folder of CVs and assessments.
+# "Software Engineer"; only the number says which one, and each opening has its
+# own folder of CVs and assessments.
+#
+# Invented, like the CVs beside it. Example Co does not exist.
 
 opening: 101
-id: ai-engineer
+id: software-engineer
 version: 1
-title: AI Engineer
+title: Software Engineer
 company: Example Co
 location: Zürich, CH
 workplace: hybrid
@@ -17,53 +19,50 @@ apply_to: apply@example.com
 closes: 2026-11-30
 salary:
   currency: CHF
-  min: 120000
-  max: 150000
-summary: 'Build and ship agentic systems that do real work for clients — not demos. Small
+  min: 110000
+  max: 140000
+summary: 'Build and run the services behind a product real customers depend on. Small
   team, direct ownership, Zürich.
 
   '
-pitch: 'We build agentic systems for companies that need them to actually work —
+pitch: 'We build software that other companies run their work on, which sets the bar:
 
-  systems that read messy inputs, decide something, and are accountable for the
+  it has to be correct, it has to be observable, and somebody has to be able to
 
-  decision afterwards. Most of what we ship runs unattended against real
+  explain what it did and why. Most of what we ship runs unattended against real
 
-  business processes, which sets the bar: it has to be right, it has to be
-
-  observable, and someone has to be able to explain what it did and why.
+  business processes.
 
 
-  You would be the first engineering hire. You will pick tools, set conventions,
+  You would own things end to end — the design, the tests, the deployment and the
 
-  and own things end to end — the prompt, the evaluation harness, the deployment
+  pager for it. The work is broad rather than deep: some weeks are the data model,
 
-  and the on-call for it. The work is broad rather than deep: some weeks are
+  some are performance, some are sitting with a customer to work out what the
 
-  model and retrieval work, some are plumbing, some are sitting with a client to
-
-  work out what the system is supposed to do.
+  system is supposed to do.
 
   '
 responsibilities:
-- Design and ship agentic systems end to end, from problem framing to production.
-- Build evaluation harnesses that tell us whether a change made things better.
+- Design and ship services end to end, from problem framing to production.
+- Write the tests that make a change safe to make again next month.
 - 'Own reliability for what you ship: tracing, cost, failure modes, rollback.'
-- Turn a vague client process into a specified one.
+- Turn a vague customer process into a specified one.
 requirements:
-- Production experience with LLM-based systems, not just prototypes.
-- Strong Python, and the judgement to know when a system needs less of it.
+- Production experience with services that real users depended on.
+- Strong in at least one language, and the judgement to know when a system needs
+  less code rather than more.
 - Comfort owning infrastructure — containers, cloud, CI, secrets.
 - Right to work in Switzerland, or an existing right to relocate here.
 nice_to_have:
-- Experience building evaluation and observability tooling.
-- Consulting or client-facing background.
+- Experience building testing and observability tooling.
+- Customer-facing background.
 - Open-source work we can read.
 knockouts:
 - id: work_permit
   test: Can work in Switzerland, or already holds the right to relocate here.
 - id: english
-  test: Working English, sufficient for client conversations.
+  test: Working English, sufficient for customer conversations.
 screening:
   min_score: 5.0
 rubric:
@@ -75,11 +74,11 @@ rubric:
     \    deployments are not interchangeable with commercial ones; a candidate\n    whose\
     \ systems only ever ran as prototypes scores at most 4 here\n    regardless of technical\
     \ sophistication.\n"
-- id: agentic_depth
+- id: engineering_depth
   weight: 30
-  guide: "8 — has built agent loops, evaluation harnesses or retrieval systems and\n    can\
-    \ say concretely what went wrong and what they changed.\n5 — has used a framework to build\
-    \ something that worked.\n2 — has called an LLM API.\n"
+  guide: "8 — has designed something non-trivial and can say concretely what went\n    wrong\
+    \ and what they changed.\n5 — has built something that worked, inside a design somebody\
+    \ else set.\n2 — has followed a tutorial to the end.\n"
 - id: ownership
   weight: 30
   guide: "8 — evidence of end-to-end ownership: chose the tools, ran the thing,\n    fixed\
@@ -98,7 +97,7 @@ boards:
     - Choose "Apply on company website" — Easy Apply keeps applications inside LinkedIn where
       the agent cannot see them.
   indeed:
-    title: AI Engineer (Python, LLMs) — Zürich
+    title: Software Engineer (Backend) — Zürich
     title_max: 100
     body_max: 15000
     setup:

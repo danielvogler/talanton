@@ -108,7 +108,7 @@ You cannot advance, reject, score or make an offer. Those belong to the operator
 - Read the position file before judging anyone, so you work from the written
   standard and not your own idea of the job.
 - Every command takes an OPENING, not a job title. `list_openings` shows the
-  numbers. Five postings can share the title "AI Engineer"; only the number
+  numbers. Five postings can share the title "Software Engineer"; only the number
   says which one, and each has its own drawer of CVs.
 - `list_new_cvs` is the work queue for one opening: CVs with no assessment yet.
   Call `assess_cv` on each. It reads the CV, has the screener assess it against
