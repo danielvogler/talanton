@@ -11,7 +11,7 @@ updates:
   - package-ecosystem: github-actions
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
     commit-message:
       prefix: "ci"
     groups:
@@ -25,7 +25,12 @@ updates:
   - package-ecosystem: uv
     directory: /
     schedule:
-      interval: weekly
+      interval: monthly
+    # GitHub already holds a new release back for three days. Seven, because a
+    # package that is yanked or fixed in that window should never have reached
+    # a pull request here in the first place.
+    cooldown:
+      default-days: 7
     commit-message:
       prefix: "chore"
     groups:
@@ -39,3 +44,16 @@ updates:
         # somebody reads rather than merges.
         patterns: ["*"]
         update-types: ["minor", "patch"]
+
+  # The hook versions in .pre-commit-config.yaml are pinned by hand, which is
+  # the same rot this file exists to prevent: a pinned hook is a hook that
+  # stops being updated.
+  - package-ecosystem: pre-commit
+    directory: /
+    schedule:
+      interval: monthly
+    commit-message:
+      prefix: "chore"
+    groups:
+      hooks:
+        patterns: ["*"]
