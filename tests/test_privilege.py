@@ -280,8 +280,9 @@ def test_the_shortlist_still_runs_the_agent_that_can_deliver(monkeypatch):
     monkeypatch.setattr(
         run,
         "converse",
-        lambda q, user_id="operator", agent_app=agent.app: seen.update(app=agent_app)
-        or run.Turn(text="x", delivered=("you@example.com",)),
+        lambda q, user_id="operator", agent_app=agent.app: (
+            seen.update(app=agent_app) or run.Turn(text="x", delivered=("you@example.com",))
+        ),
     )
     run.shortlist("101")
     assert seen["app"] is agent.app
