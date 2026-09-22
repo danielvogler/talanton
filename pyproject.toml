@@ -4,8 +4,39 @@ version = "0.10.0"
 description = "An agentic hiring pipeline: draft the role, screen what arrives, surface only who is worth reading."
 readme = "README.md"
 requires-python = ">=3.11"
-license = { text = "Apache-2.0" }
-authors = [{ name = "danielvogler" }]
+# The SPDX form, not the table: `{ text = ... }` is the pre-PEP-639 spelling
+# and is deprecated by every current build backend.
+license = "Apache-2.0"
+license-files = ["LICENSE"]
+authors = [{ name = "Daniel Vogler" }]
+maintainers = [{ name = "Daniel Vogler" }]
+keywords = [
+    "hiring",
+    "recruiting",
+    "cv-screening",
+    "applicant-screening",
+    "agents",
+    "google-adk",
+    "email",
+    "shortlist",
+]
+# Every supported version is listed, because `requires-python` alone tells a
+# PyPI reader nothing they can see on the page.
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Other Audience",
+    "Natural Language :: English",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Office/Business",
+    "Topic :: Communications :: Email",
+    "Typing :: Typed",
+]
 dependencies = [
     # >=2.0, not >=1.0: `google.adk.apps.App` and `InMemoryRunner(app=...)` do not
     # exist before 1.14, and 2.x is the only line CI actually resolves against.
@@ -17,6 +48,12 @@ dependencies = [
     "pypdf>=5.0",
     "pyyaml>=6.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/danielvogler/talanton"
+Source = "https://github.com/danielvogler/talanton"
+Issues = "https://github.com/danielvogler/talanton/issues"
+Changelog = "https://github.com/danielvogler/talanton/blob/main/CHANGELOG.md"
 
 [project.scripts]
 talanton = "talanton.cli:main"
