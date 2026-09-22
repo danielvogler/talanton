@@ -19,27 +19,16 @@
 ## Start here
 
 **You do not drive talanton. A coding agent does.** Point one at
-[AGENTS.md](./AGENTS.md) and tell it what you are hiring for:
+[AGENTS.md](./AGENTS.md) — the runbook — and tell it what you are hiring for:
 
 ```
 Read https://github.com/danielvogler/talanton/blob/main/AGENTS.md
 and set this up. We are hiring a software engineer in Zürich.
 ```
 
-That file is the runbook, written for exactly this: the questions worth asking
-before anything is configured, the install, where CVs and assessments live,
-writing the role with you, and the first cycle run by hand so you can watch it.
-You do not need to know anything about this repository to start.
-
-Nothing to clone. It is on [PyPI](https://pypi.org/p/talanton), and your roles
-and candidates belong in your own private repository, never in this one:
-
-```bash
-uv add talanton               # in your hiring repo
-uvx talanton --help           # or just look first
-```
-
-The rest of this page is what the agent is working from.
+Nothing to clone and nothing to know first: it installs from
+[PyPI](https://pypi.org/p/talanton) into your own private hiring repository,
+and the agent does that with you.
 
 ---
 
@@ -48,6 +37,11 @@ The rest of this page is what the agent is working from.
 **talanton is an agentic recruitment workflow you run yourself.** It takes a
 role from "we should hire someone" to a shortlist on your desk, and stops
 there.
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="docs/assets/how-it-works-dark.svg">
+  <img alt="Five steps, with one participant across all of them and one store beneath four. One file per opening holds the ad, the knockouts and the rubric, written once; from it the agent produces the finished posting for each platform, customized and length-checked; applications are ingested from the mailbox or dropped in, routed, deduped and recorded; every one is assessed automatically and unattended against that same rubric; and a short, ranked account of who is worth your time comes back. You reach any step through your coding agent, and the opening, the CVs and the assessments live in storage you choose — a local folder, a Google Drive folder or a cloud bucket. Identity is recorded, never scored, talanton never writes to a candidate, and a person decides." src="docs/assets/how-it-works-light.svg">
+</picture>
 
 You describe the job to a coding agent. From then on:
 
