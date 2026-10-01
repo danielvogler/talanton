@@ -17,7 +17,8 @@ import hashlib
 import json
 import logging
 import re
-from collections.abc import Sequence
+from collections.abc import Iterator, Sequence
+from contextlib import contextmanager
 from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
@@ -43,6 +44,32 @@ REPORT_MARKER = "last-report.json"
 UNREADABLE_MARKER = "unreadable.json"
 ID_PREFIX = "c-"
 ID_LENGTH = 16
+
+# Every assessment in an opening, kept for the length of one run where one is
+# open. In a shortlist the agent lists the pool and the correspondent's send
+# then checks every name in it: two tool calls, one pool, and on Drive each
+# assessment is a download of its own. Outside `assessments_cached` nothing
+# is kept, so a long-lived process never answers from a stale pool.
+#
+# Module-level rather than a ContextVar, for the reason `tools._delivered` is:
+# the correspondent runs on another thread, and a ContextVar does not cross.
+_pool_cache: dict[str, dict[str, dict[str, Any]]] | None = None
+
+
+@contextmanager
+def assessments_cached() -> Iterator[None]:
+    """Reads each opening's assessments at most once inside this block."""
+    global _pool_cache
+    previous, _pool_cache = _pool_cache, {}
+    try:
+        yield
+    finally:
+        _pool_cache = previous
+
+
+def _copied(pool: dict[str, dict[str, Any]]) -> dict[str, dict[str, Any]]:
+    """A caller's own copy, so nothing it changes leaks into the next answer."""
+    return {candidate: dict(assessment) for candidate, assessment in pool.items()}
 
 
 def cvs(opening: str = "") -> locations.Location:
@@ -317,6 +344,8 @@ def assessed_ids(opening: str = "") -> set[str]:
 
 def load_assessments(opening: str = "") -> dict[str, dict[str, Any]]:
     """Every assessment for one opening, by candidate id."""
+    if _pool_cache is not None and opening in _pool_cache:
+        return _copied(_pool_cache[opening])
     location = assessments(opening)
     out = {}
     for item in location.list():
@@ -324,6 +353,8 @@ def load_assessments(opening: str = "") -> dict[str, dict[str, Any]]:
             continue
         parsed = yaml.safe_load(location.read(item).decode("utf-8")) or {}
         out[item.name.removesuffix(ASSESSMENT_SUFFIX)] = {**parsed, "uri": item.uri}
+    if _pool_cache is not None:
+        _pool_cache[opening] = _copied(out)
     return out
 
 
@@ -335,6 +366,8 @@ def assessments_for(candidates: set[str], opening: str = "") -> dict[str, dict[s
     three people out of seventy. This lists once and reads only what was asked
     for, so the cost tracks the question rather than the pool.
     """
+    if _pool_cache is not None and opening in _pool_cache:
+        return _copied({c: a for c, a in _pool_cache[opening].items() if c in candidates})
     location = assessments(opening)
     wanted = {assessment_name(c): c for c in candidates}
     out: dict[str, dict[str, Any]] = {}
@@ -367,7 +400,10 @@ def assessment(candidate: str, opening: str = "") -> dict[str, Any]:
 def save_assessment(candidate: str, data: dict[str, Any], opening: str = "") -> Item:
     """Writes one assessment, replacing any earlier one for that candidate."""
     payload = yaml.safe_dump(data, sort_keys=False, allow_unicode=True).encode("utf-8")
-    return assessments(opening).write(assessment_name(candidate), payload)
+    item = assessments(opening).write(assessment_name(candidate), payload)
+    if _pool_cache is not None:
+        _pool_cache.pop(opening, None)
+    return item
 
 
 def record_unreadable(candidates: set[str], opening: str = "") -> Item:

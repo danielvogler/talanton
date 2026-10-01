@@ -10,6 +10,20 @@ happen.
 
 ## [Unreleased]
 
+## [0.12.1] - 2026-10-01
+
+### Fixed
+
+- A shortlist reads an opening's assessments once rather than twice. The
+  agent's listing and the send's name check each downloaded every assessment,
+  which on Drive is a download per candidate, and on a link that drops
+  connections each one is retried up to four times. A write during the run
+  still drops what was kept, so nothing is answered stale.
+
+- A failure to reach Google's token server is reported as the network, not as
+  credentials to refresh. On a flaky connection the message said to run
+  `gcloud auth application-default login`, which fixes nothing.
+
 ## [0.12.0] - 2026-10-01
 
 ### Changed
@@ -417,7 +431,8 @@ happen.
   IMAP for the apply mailbox, `dry_run` on by default everywhere, and
   candidate data gitignored by `talanton init` before the first CV arrives.
 
-[Unreleased]: https://github.com/danielvogler/talanton/compare/v0.12.0...HEAD
+[Unreleased]: https://github.com/danielvogler/talanton/compare/v0.12.1...HEAD
+[0.12.1]: https://github.com/danielvogler/talanton/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/danielvogler/talanton/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/danielvogler/talanton/compare/v0.10.0...v0.11.0
 [0.7.1]: https://github.com/danielvogler/talanton/compare/v0.7.0...v0.7.1

@@ -135,6 +135,13 @@ def readable_auth_errors(call):
 
         try:
             return call(*args, **kwargs)
+        except google.auth.exceptions.TransportError as exc:
+            # Checked first: it is a GoogleAuthError too, and "log in again"
+            # sends somebody on a dropped connection the wrong way.
+            raise LocationError(
+                f"could not reach Google to use the credentials ({exc}).\n"
+                "      This is the network, not the login: check the connection and try again."
+            ) from exc
         except google.auth.exceptions.GoogleAuthError as exc:
             raise LocationError(explain_credentials(exc)) from exc
 
