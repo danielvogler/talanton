@@ -10,6 +10,16 @@ happen.
 
 ## [Unreleased]
 
+## [0.12.2] - 2026-10-01
+
+### Added
+
+- A shortlist says how far it got. Reading an opening's assessments logs
+  `assessments: 40/100 read` every ten files, or after five seconds without a
+  line, and the send logs each phase — checking names, sending, and whether
+  the mail was sent, declined or failed. On a slow link the log used to stop
+  after the model's reply, and a slow run looked exactly like a stuck one.
+
 ## [0.12.1] - 2026-10-01
 
 ### Fixed
@@ -431,7 +441,8 @@ happen.
   IMAP for the apply mailbox, `dry_run` on by default everywhere, and
   candidate data gitignored by `talanton init` before the first CV arrives.
 
-[Unreleased]: https://github.com/danielvogler/talanton/compare/v0.12.1...HEAD
+[Unreleased]: https://github.com/danielvogler/talanton/compare/v0.12.2...HEAD
+[0.12.2]: https://github.com/danielvogler/talanton/compare/v0.12.1...v0.12.2
 [0.12.1]: https://github.com/danielvogler/talanton/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/danielvogler/talanton/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/danielvogler/talanton/compare/v0.10.0...v0.11.0
