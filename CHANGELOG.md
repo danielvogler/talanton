@@ -10,6 +10,44 @@ happen.
 
 ## [Unreleased]
 
+## [0.12.0] - 2026-10-01
+
+### Changed
+
+- A shortlist mail is one list, and each candidate's CV link is on their own
+  entry. The candidates used to come in the agent's prose and their links in a
+  separate block at the bottom, so opening a CV meant matching a hash in one
+  list against a hash in another. The agent also laid the entries out by hand,
+  and the columns drifted every few entries.
+
+  `send_digest` now takes the shortlist as ranked entries — a candidate id and
+  one line on why — and builds each numbered entry in code: the score, the CV
+  link, and whatever else is on record, meaning employers, when and by which
+  route the application arrived, `NEW` since the last report, the facts the CV
+  left open and what the screener flagged. The CV link sits directly under the
+  id, above any board name a mail client would turn into a link of its own.
+
+  Only the score and the link are always there. A folder of CVs put there by
+  hand, with no board, no date and no years, gives short entries rather than a
+  column of placeholders.
+
+- Text quoted from a CV goes out with its links and addresses removed, and at
+  most three of the screener's flags per candidate are mailed. Flags are where
+  a hostile CV's own words end up, and the mail comes from a sender the
+  operator trusts.
+
+- A line quoted from a CV that names somebody is left out of its entry rather
+  than refusing the whole mail. The agent cannot rewrite the screener's words,
+  so a refusal there blocked every retry. The name check over the finished
+  mail is unchanged.
+
+- The mail footer names the talanton version that wrote it. A deployment
+  pinned to an old release sent mail that looked current, and nothing in it
+  said otherwise.
+
+- `talanton send --candidates` takes the ids best first; the order is the
+  order of the entries.
+
 ## [0.11.0] - 2026-09-22
 
 ### Added
@@ -379,7 +417,8 @@ happen.
   IMAP for the apply mailbox, `dry_run` on by default everywhere, and
   candidate data gitignored by `talanton init` before the first CV arrives.
 
-[Unreleased]: https://github.com/danielvogler/talanton/compare/v0.11.0...HEAD
+[Unreleased]: https://github.com/danielvogler/talanton/compare/v0.12.0...HEAD
+[0.12.0]: https://github.com/danielvogler/talanton/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/danielvogler/talanton/compare/v0.10.0...v0.11.0
 [0.7.1]: https://github.com/danielvogler/talanton/compare/v0.7.0...v0.7.1
 [0.7.0]: https://github.com/danielvogler/talanton/compare/v0.6.0...v0.7.0

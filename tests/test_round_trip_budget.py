@@ -12,7 +12,7 @@ assertion cannot be satisfied except by fixing the cause.
 """
 
 from talanton import store, tools
-from tests.conftest import FULL_FACTS, OPENING
+from tests.conftest import FULL_FACTS, OPENING, picks
 from tests.roundtrips import counted
 
 SMALL, LARGE = 5, 50
@@ -76,7 +76,7 @@ def test_the_digest_never_lists_once_per_candidate(position, sent, monkeypatch):
     needing more than a handful means something is asking per candidate."""
 
     def send(ids):
-        tools.send_digest(OPENING, f"{ids[0]} is worth a look", ids[:3])
+        tools.send_digest(OPENING, f"{ids[0]} is worth a look", picks(*ids[:3]))
 
     small, large = costs_as_the_pool_grows(send, monkeypatch)
     assert large.lists == small.lists, f"lists grew: {small} -> {large}"
@@ -92,7 +92,7 @@ def test_a_digest_reads_only_the_shortlisted_when_it_need_not_check_names(
     configure(shortlist=config.Shortlist(names=True))
 
     def send(ids):
-        tools.send_digest(OPENING, f"{ids[0]} is worth a look", ids[:3])
+        tools.send_digest(OPENING, f"{ids[0]} is worth a look", picks(*ids[:3]))
 
     small, large = costs_as_the_pool_grows(send, monkeypatch)
     assert large.reads == small.reads, (
@@ -109,7 +109,7 @@ def test_the_name_check_reads_the_pool_once_and_not_three_times(position, sent, 
     ids = build_pool(LARGE)
     tally = counted(monkeypatch)
     tally.reset()
-    tools.send_digest(OPENING, f"{ids[0]} is worth a look", ids[:3])
+    tools.send_digest(OPENING, f"{ids[0]} is worth a look", picks(*ids[:3]))
     assert tally.reads < LARGE * 2, (
         f"{tally.reads} reads for a pool of {LARGE}: the pool is being read more than once"
     )
@@ -163,7 +163,7 @@ def test_arrival_records_are_read_only_for_the_shortlisted(position, sent, monke
             store.write_provenance(
                 candidate, {"arrived": "2026-09-14", "via": "import", "source": "a-board"}, OPENING
             )
-        tools.send_digest(OPENING, f"{ids[0]} is worth a look", ids[:3])
+        tools.send_digest(OPENING, f"{ids[0]} is worth a look", picks(*ids[:3]))
 
     small, large = costs_as_the_pool_grows(send, monkeypatch)
     assert large.reads == small.reads, f"arrival records are read per candidate on file: {small} -> {large}"

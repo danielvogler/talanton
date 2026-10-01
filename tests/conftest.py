@@ -30,6 +30,12 @@ POSITION = {
     "boards": {"linkedin": {"title_max": 200}},
 }
 
+
+def picks(*candidates: str, why: str = "worth a look") -> list[dict[str, str]]:
+    """A shortlist as the correspondent hands it over: ranked ids, a reason each."""
+    return [{"candidate": candidate, "why": why} for candidate in candidates]
+
+
 FULL_FACTS = {
     "name": "unknown",
     "work_authorisation": "citizen",

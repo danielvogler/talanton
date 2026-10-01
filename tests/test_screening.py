@@ -1,7 +1,7 @@
 """The knockout filter. This is what "a human never has to look at them" means."""
 
 from talanton import screening, tools
-from tests.conftest import OPENING, POSITION
+from tests.conftest import OPENING, POSITION, picks
 
 
 def test_a_failed_knockout_excludes():
@@ -56,7 +56,7 @@ def test_get_candidate_will_not_hand_back_an_excluded_assessment(assessed, posit
 
 def test_an_excluded_candidates_cv_is_never_linked(assessed, position, sent):
     dropped = assessed("blocked.txt", knockouts={"work_permit": "fail"})
-    result = tools.send_digest(OPENING, "here they are", [dropped])
+    result = tools.send_digest(OPENING, "here they are", picks(dropped))
     assert result["linked"] == []
     assert result["refused"][0]["candidate"] == dropped
 

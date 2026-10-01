@@ -20,8 +20,10 @@ from dataclasses import dataclass
 from datetime import date, datetime
 from typing import Any
 
+from pydantic import TypeAdapter, ValidationError
+
 from . import assessment as assessment_module
-from . import documents, locations, outbound, positions, screening, store
+from . import digest, documents, locations, outbound, positions, screening, store
 from .config import current
 from .locations import LocationError
 
@@ -40,6 +42,10 @@ TRANSLITERATIONS = {"ä": "ae", "ö": "oe", "ü": "ue", "å": "aa", "ø": "oe", 
 # Facts a CV should establish. Absent ones are reported, not guessed.
 EXPECTED_FACTS = ("work_authorisation", "years_industry", "language", "notice_period")
 UNANSWERED = (None, "", "unknown")
+
+# What `send_digest` accepts, checked here as well as by the model client: a
+# test, the standing report and the runner all call it directly.
+SHORTLIST = TypeAdapter(list[digest.ShortlistEntry])
 
 # How several documents are presented to the screener as one application. A
 # candidate with one document gets no heading at all, because the overwhelming
@@ -635,7 +641,7 @@ def _unreadable_line(counts: dict) -> str:
     )
 
 
-def send_digest(opening: str, summary: str, candidates: list[str]) -> dict:
+def send_digest(opening: str, summary: str, candidates: list[digest.ShortlistEntry]) -> dict:
     """Email the operator a shortlist, with a link to each candidate's CV.
 
     This is the ONLY tool that sends anything, and it can only reach the
@@ -649,13 +655,27 @@ def send_digest(opening: str, summary: str, candidates: list[str]) -> dict:
     the deployment has weighed that and names are permitted; write about
     people's experience either way, never about anything the CV did not say.
 
+    The tool lays out the shortlist itself: one numbered entry per candidate,
+    in the order given, with the score, the CV link and whatever else is on
+    record. Do not list the candidates in `summary` as well.
+
     Args:
         opening: The opening number, e.g. "123", or its full slug.
-        summary: The text to send. Ids, not names.
-        candidates: Candidate ids whose CV links to include. May be empty:
-            a run where nobody cleared the bar is still reported, because
-            silence does not distinguish an empty pool from a broken run.
+        summary: A short introduction above the list. Ids, not names.
+        candidates: The shortlist, best first: each a candidate id and one
+            line on why they are worth a look. May be empty: a run where
+            nobody cleared the bar is still reported, because silence does
+            not distinguish an empty pool from a broken run.
     """
+    try:
+        picks = _distinct(SHORTLIST.validate_python(candidates))
+    except ValidationError as exc:
+        return {
+            "sent": False,
+            "reason": f"the shortlist is malformed ({exc.error_count()} problem(s)): each entry needs a "
+            "`candidate` id and a one-line `why`.",
+        }
+
     position = positions.resolve(opening)
     slug = positions.slug(position)
     operators = current().outbound.operators
@@ -671,7 +691,7 @@ def send_digest(opening: str, summary: str, candidates: list[str]) -> dict:
     except outbound.NotAllowedError as exc:
         return {"sent": False, "reason": str(exc)}
 
-    links, refused = _cv_links(candidates, position)
+    shortlisted, refused = _cv_links([p.candidate for p in picks], position)
 
     # Loaded once for the whole of this send. The counts and the name check are
     # both questions about the pool, and each used to answer its own by
@@ -681,9 +701,7 @@ def send_digest(opening: str, summary: str, candidates: list[str]) -> dict:
     checking_names = not current().shortlist.names
     pool = store.load_assessments(slug) if checking_names else None
 
-    # Only the shortlisted, so the cost tracks the mail rather than the pool.
-    arrivals = store.provenances_for({c for c, _ in links}, slug) if links else {}
-    body = f"{summary.rstrip()}\n\n{_counts_line(slug)}" + _link_block(links, arrivals)
+    body = _compose(summary, picks, shortlisted, slug, pool)
 
     # The whole body, not only the prose. A CV stored under the name its sender
     # gave it puts that name into the link, so checking the summary alone
@@ -727,7 +745,7 @@ def send_digest(opening: str, summary: str, candidates: list[str]) -> dict:
         "sent": True,
         "opening": slug,
         "to": list(operators),
-        "linked": [c for c, _ in links],
+        "linked": list(shortlisted),
         "refused": refused,
     }
 
@@ -801,13 +819,21 @@ def _word_in(name: str, folded: str) -> bool:
     return any(re.search(rf"\b{re.escape(spelling)}\b", folded) for spelling in _spellings(name))
 
 
-def _cv_links(candidates: list[str], position: dict) -> tuple[list[tuple[str, str]], list[dict[str, str]]]:
-    """The CV link for each candidate, refusing any the filter excluded."""
+def _distinct(picks: list[digest.ShortlistEntry]) -> list[digest.ShortlistEntry]:
+    """The shortlist with any repeated id dropped, keeping its first place."""
+    first: dict[str, digest.ShortlistEntry] = {}
+    for pick in picks:
+        first.setdefault(pick.candidate, pick)
+    return list(first.values())
+
+
+def _cv_links(candidates: list[str], position: dict) -> tuple[dict[str, dict], list[dict[str, str]]]:
+    """The assessment behind each linkable candidate, refusing any the filter excluded."""
     # Only the candidates named. This used to download every assessment in the
     # opening to build links for a handful, which on a real pool is one HTTP
     # request per candidate on file before the mail is even composed.
     everything = store.assessments_for(set(candidates), positions.slug(position))
-    links: list[tuple[str, str]] = []
+    shortlisted: dict[str, dict] = {}
     refused: list[dict[str, str]] = []
 
     for candidate in candidates:
@@ -818,85 +844,46 @@ def _cv_links(candidates: list[str], position: dict) -> tuple[list[tuple[str, st
         if screening.exclusions(assessment, position):
             refused.append({"candidate": candidate, "reason": "excluded by a knockout; nothing sent"})
             continue
-        uri = assessment.get("cv_uri")
-        if not uri:
+        if not assessment.get("cv_uri"):
             refused.append({"candidate": candidate, "reason": "no CV link recorded"})
             continue
-        links.append((candidate, uri))
+        shortlisted[candidate] = assessment
 
-    return links, refused
-
-
-# How an application got in, said in words an operator reads rather than the
-# value the record stores. Anything else is reported as the record spells it.
-ROUTES = {"mailbox": "by email", "import": "imported"}
-
-# An arrival record's `source` is free text where it is a board or a referrer.
-# It is rendered into a mail, so it is held to one line of reasonable length.
-MAX_SOURCE_LENGTH = 60
+    return shortlisted, refused
 
 
-def _arrival_line(record: dict[str, Any]) -> str:
-    """When one application came in and by which route.
+def _compose(
+    summary: str,
+    picks: list[digest.ShortlistEntry],
+    shortlisted: dict[str, dict],
+    slug: str,
+    pool: dict | None,
+) -> str:
+    """The whole mail body: the introduction, the entries, the footer.
 
-    The route, never the sender. A mailbox record's `source` is the address the
-    application arrived from, and an address identifies as surely as a name
-    does — which is why only `via` is used for that route, and why the board or
-    referrer behind an import, which identifies nobody, is.
+    With the name check running (`pool` loaded), a line quoted from a CV that
+    names anybody is left out of its entry. The check over the whole body still
+    runs afterwards; this only stops the screener's words from blocking a send
+    the agent has no way to fix.
 
-    `sent` is the date the applicant's own mail client claims; `arrived` is
-    when talanton read the mailbox. They are different claims, so they are
-    given different verbs rather than being averaged into one date.
+    Arrival records are read for the shortlisted alone, so the cost tracks the
+    mail rather than the pool. "New" is only said once a report has gone out:
+    on the first, everybody is new and the word would say nothing.
     """
-    if not record:
-        return "arrival not recorded"
-
-    via = str(record.get("via") or "").strip()
-    route = ROUTES.get(via) or (f"via {via}" if via else "route not recorded")
-    if via == "import" and (source := _one_line(record.get("source"))):
-        route = f"{route} from {source}"
-
-    if sent := _one_line(record.get("sent")):
-        return f"applied {sent}, {route}"
-    if arrived := _one_line(record.get("arrived")):
-        return f"arrived {arrived}, {route}"
-    return route
-
-
-def _one_line(value: Any) -> str:
-    """A recorded value as a single bounded line, or "" if there is none."""
-    if not value:
-        return ""
-    collapsed = " ".join(str(value).split())
-    return collapsed[:MAX_SOURCE_LENGTH]
-
-
-def _link_block(links: list[tuple[str, str]], arrivals: dict[str, dict[str, Any]]) -> str:
-    """The CV links, appended below the agent's own text.
-
-    Built here rather than written by the agent, so a link can only point at a
-    CV this system actually recorded.
-
-    Numbered, because the list is read in one sitting and rarely finished in
-    one. Fifteen ids that differ only in their hex and fifteen Drive URLs that
-    differ only in their file id give the eye nothing to hold on to; "I stopped
-    after 7" is a place a person can come back to. The numbers sit in a column
-    so that scanning down them stays possible past nine.
-
-    Each carries when it came in and by which route, because "the one from
-    March, through the referral" is how an operator remembers an application
-    and an id is not.
-    """
-    if not links:
-        return ""
-    width = len(str(len(links)))
-    indent = f"  {'':>{width}}  "
-    lines = ["", "", f"CVs ({len(links)}):"]
-    for number, (candidate, uri) in enumerate(links, start=1):
-        lines += [
-            f"  {number:>{width}}. {candidate}",
-            f"{indent}{_arrival_line(arrivals.get(candidate) or {})}",
-            f"{indent}{uri}",
-        ]
-    lines += ["", "Access is controlled on the folder. If you cannot open one, you were not given access."]
-    return "\n".join(lines)
+    ids = list(shortlisted)
+    records = store.provenances_for(set(ids), slug) if ids else {}
+    arrivals = digest.arrivals(records, ids)
+    seen = store.last_reported(slug) if ids else set()
+    found = {
+        c: digest.Found(
+            uri=a["cv_uri"],
+            assessment=a,
+            missing=[f for f in EXPECTED_FACTS if f in missing_facts(a)],
+            arrival=arrivals.get(c, ""),
+            new=bool(seen) and c not in seen,
+        )
+        for c, a in shortlisted.items()
+    }
+    listed = digest.entries(picks, found, keep=lambda line: pool is None or not _names_in(line, slug, pool))
+    sections = [summary.rstrip(), listed, digest.footer(_counts_line(slug), version(), linked=bool(ids))]
+    return "\n\n".join(section for section in sections if section)
