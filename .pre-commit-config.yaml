@@ -25,7 +25,7 @@ repos:
         args: [--fix=lf]
 
   - repo: https://github.com/astral-sh/ruff-pre-commit
-    rev: v0.16.8
+    rev: v0.16.9
     hooks:
       # `ruff` is a deprecated alias for `ruff-check` and warns on every run.
       - id: ruff-check
@@ -33,7 +33,7 @@ repos:
       - id: ruff-format
 
   - repo: https://github.com/astral-sh/uv-pre-commit
-    rev: 0.12.17
+    rev: 0.12.19
     hooks:
       # uv.lock is committed and consumers pin against it, so a pyproject.toml
       # edit that leaves the lock behind is a lockfile describing something
