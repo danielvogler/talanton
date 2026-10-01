@@ -53,10 +53,11 @@ RESCREEN_PROMPT = (
 
 SHORTLIST_PROMPT = (
     "For opening {role}, list the assessed candidates and decide who is worth the operator's "
-    "time. If any are, hand the correspondent a shortlist saying who and why and what "
-    "to ask them, with their ids so the CV links are included. Refer to candidates by "
-    "id only, never by name. If none clear the bar, send a digest saying so with an "
-    "empty candidate list — every run reports, including the ones with nothing to report."
+    "time. If any are, hand the correspondent the shortlist, best first: each candidate's id "
+    "and one line on why. The mail lays out each entry with its score and CV link itself. "
+    "Refer to candidates by id only, never by name. If none clear the bar, send a digest "
+    "saying so with an empty candidate list — every run reports, including the ones with "
+    "nothing to report."
 )
 
 NOBODY_CLEARED = (

@@ -683,10 +683,12 @@ def cmd_send(args: argparse.Namespace) -> int:
     The name check and the CV links are applied here exactly as they are for
     the agent — writing the summary yourself does not get you past them.
     """
-    from . import tools
+    from . import digest, tools
 
     summary = sys.stdin.read() if args.summary == "-" else args.summary
-    candidates = [c.strip() for c in args.candidates.split(",") if c.strip()]
+    # Ids only: the entries are laid out from what is on record, and a reason
+    # per candidate belongs in the summary when you write the mail yourself.
+    candidates = [digest.ShortlistEntry(candidate=c.strip()) for c in args.candidates.split(",") if c.strip()]
 
     result = tools.send_digest(args.opening, summary.strip(), candidates)
     if not result["sent"]:
@@ -920,7 +922,7 @@ def build_parser() -> argparse.ArgumentParser:
 
     send = sub.add_parser("send", help="send a shortlist you wrote yourself")
     send.add_argument("opening")
-    send.add_argument("--candidates", required=True, help="comma-separated candidate ids")
+    send.add_argument("--candidates", required=True, help="comma-separated candidate ids, best first")
     send.add_argument("--summary", required=True, help="the text, or - for stdin")
     send.set_defaults(func=cmd_send)
 

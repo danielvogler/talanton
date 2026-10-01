@@ -7,7 +7,7 @@ computed here rather than written by the model.
 """
 
 from talanton import config, run, tools
-from tests.conftest import OPENING
+from tests.conftest import OPENING, picks
 
 
 def turn(text="done", delivered=(), declined=()):
@@ -84,7 +84,7 @@ def test_no_operator_configured_is_not_a_failure(configure, assessed, position, 
 
 def test_the_counts_are_on_an_ordinary_shortlist_too(assessed, position, sent):
     cid = assessed()
-    tools.send_digest(OPENING, f"{cid} is worth a look", [cid])
+    tools.send_digest(OPENING, f"{cid} is worth a look", picks(cid))
 
     assert "1 application" in sent[0]["body"]
 

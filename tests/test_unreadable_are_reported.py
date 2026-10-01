@@ -14,7 +14,7 @@ job.
 """
 
 from talanton import run, store, tools
-from tests.conftest import OPENING
+from tests.conftest import OPENING, picks
 
 SCAN = b"%PDF-1.4 no text layer"
 GOOD = {"overall": 7.0, "justification": "Fine.", "knockouts": {"work_permit": "pass"}}
@@ -24,7 +24,7 @@ def test_the_digest_says_how_many_could_not_be_read(position, assessed, cv, sent
     cid = assessed("anna.txt")
     store.write_documents(store.candidate_id("scan.pdf"), [("scan.pdf", SCAN)], OPENING)
     store.record_unreadable({store.candidate_id("scan.pdf")}, OPENING)
-    tools.send_digest(OPENING, f"{cid} is worth a look", [cid])
+    tools.send_digest(OPENING, f"{cid} is worth a look", picks(cid))
     assert "could not be read" in sent[0]["body"]
 
 
@@ -33,7 +33,7 @@ def test_it_names_them_so_the_operator_can_ask_for_another_file(position, assess
     scan = store.candidate_id("scan.pdf")
     store.write_documents(scan, [("scan.pdf", SCAN)], OPENING)
     store.record_unreadable({scan}, OPENING)
-    tools.send_digest(OPENING, f"{cid} is worth a look", [cid])
+    tools.send_digest(OPENING, f"{cid} is worth a look", picks(cid))
     assert scan in sent[0]["body"], "an id carries no identity and is what makes it actionable"
 
 
@@ -41,7 +41,7 @@ def test_a_pool_with_nothing_unreadable_says_nothing_about_it(position, assessed
     """The footer is one sentence. It does not grow a clause for a case that
     did not happen."""
     cid = assessed("anna.txt")
-    tools.send_digest(OPENING, f"{cid} is worth a look", [cid])
+    tools.send_digest(OPENING, f"{cid} is worth a look", picks(cid))
     assert "could not be read" not in sent[0]["body"]
 
 
