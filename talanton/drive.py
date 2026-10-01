@@ -34,7 +34,7 @@ from .locations import Item, LocationError
 SCOPES = ("https://www.googleapis.com/auth/drive",)
 FOLDER_MIME = "application/vnd.google-apps.folder"
 ROOT = "root"
-FILE_FIELDS = "id,name,webViewLink,mimeType"
+FILE_FIELDS = "id,name,webViewLink,mimeType,md5Checksum,modifiedTime"
 # A socket with no timeout hangs a scheduled run until somebody notices. A
 # socket with a timeout and no retry turns one slow response into a failed
 # stage. Observed both while screening a dozen CVs: three runs died on a Drive
@@ -159,6 +159,9 @@ def _item(record: dict) -> Item:
         id=record["id"],
         name=record.get("name", record["id"]),
         uri=record.get("webViewLink") or f"https://drive.google.com/file/d/{record['id']}/view",
+        # The checksum where Drive keeps one; a native Google file has none,
+        # and its modified time changes with every edit just the same.
+        version=record.get("md5Checksum") or record.get("modifiedTime") or "",
     )
 
 

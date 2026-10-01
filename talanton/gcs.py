@@ -51,7 +51,12 @@ class GCSLocation:
 
     def _item(self, blob) -> Item:
         name = blob.name.removeprefix(f"{self.prefix}/") if self.prefix else blob.name
-        return Item(id=blob.name, name=name, uri=f"{CONSOLE}/{self.bucket_name}/{blob.name}")
+        return Item(
+            id=blob.name,
+            name=name,
+            uri=f"{CONSOLE}/{self.bucket_name}/{blob.name}",
+            version=str(blob.generation or ""),
+        )
 
     def list(self) -> list[Item]:
         handle = bucket(self.bucket_name)
