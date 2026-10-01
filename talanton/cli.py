@@ -690,9 +690,13 @@ def cmd_send(args: argparse.Namespace) -> int:
     # per candidate belongs in the summary when you write the mail yourself.
     candidates = [digest.ShortlistEntry(candidate=c.strip()) for c in args.candidates.split(",") if c.strip()]
 
-    result = tools.send_digest(args.opening, summary.strip(), candidates)
+    return _sent(tools.send_digest(args.opening, summary.strip(), candidates))
+
+
+def _sent(result: dict) -> int:
+    """Prints what a send did, and the exit code that goes with it."""
     if not result["sent"]:
-        print(f"FAIL  {result['reason']}", file=sys.stderr)
+        print(f"FAIL  {result.get('reason') or result.get('error')}", file=sys.stderr)
         return EXIT_FAILURE
 
     print(f"ok    sent to {', '.join(result['to'])}")
@@ -700,6 +704,42 @@ def cmd_send(args: argparse.Namespace) -> int:
         print(f"      linked: {', '.join(result['linked'])}")
     for refusal in result["refused"]:
         print(f"note  {refusal['candidate']}: {refusal['reason']}")
+    return 0
+
+
+def cmd_resend(args: argparse.Namespace) -> int:
+    """Send the last delivered shortlist again, laid out from today's records.
+
+    No model runs: the ranking and each reason are the ones that went out. The
+    entries are built again, so a CV link or a score that changed since is the
+    current one, and the same guards apply as to any send.
+    """
+    from . import store, tools
+
+    slug = positions.slug(positions.resolve(args.opening))
+    last = store.last_shortlist(slug)
+    if not last:
+        print(
+            f"FAIL  no shortlist for opening {slug} has been delivered yet; nothing to send again.",
+            file=sys.stderr,
+        )
+        return EXIT_FAILURE
+    return _sent(tools.send_digest(slug, str(last.get("summary", "")), list(last.get("candidates") or [])))
+
+
+def cmd_index(args: argparse.Namespace) -> int:
+    """Build or bring up to date the mirrors a shortlist reads.
+
+    The first time, every assessment and arrival record is read once — run it
+    on a good connection. After that only what changed is read.
+    """
+    from . import store
+
+    slug = positions.slug(positions.resolve(args.opening))
+    counts = store.refresh(slug)
+    print(
+        f"ok    {slug}: {counts['assessments']} assessment(s), {counts['arrivals']} arrival record(s) mirrored"
+    )
     return 0
 
 
@@ -925,6 +965,14 @@ def build_parser() -> argparse.ArgumentParser:
     send.add_argument("--candidates", required=True, help="comma-separated candidate ids, best first")
     send.add_argument("--summary", required=True, help="the text, or - for stdin")
     send.set_defaults(func=cmd_send)
+
+    resend = sub.add_parser("resend", help="send the last delivered shortlist again, without a model")
+    resend.add_argument("opening")
+    resend.set_defaults(func=cmd_resend)
+
+    index = sub.add_parser("index", help="build the files a shortlist reads, so it costs two reads")
+    index.add_argument("opening")
+    index.set_defaults(func=cmd_index)
 
     assess = sub.add_parser("assess", help="assess the CVs that have no assessment yet (calls a model)")
     assess.add_argument("opening")

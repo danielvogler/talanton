@@ -750,6 +750,7 @@ def send_digest(opening: str, summary: str, candidates: list[digest.ShortlistEnt
     # owed on the first real send.
     if not current().outbound.dry_run:
         store.record_report(_candidates(slug), slug)
+        store.record_shortlist(summary, [pick.model_dump() for pick in picks], slug)
 
     return {
         "sent": True,

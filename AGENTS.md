@@ -513,6 +513,8 @@ guards. No Vertex, no API key, no model id.
 | `next <role>` | The next unassessed CV: the rubric, the CV fenced as untrusted text, and the schema to return — the same one the deployed screener has enforced on it. Says "nothing waiting" when the queue is empty, so you can loop on it. |
 | `record <cv> --opening <n> --from <f>` | Save the assessment you produced. `--from -` reads stdin. **The same knockout filter runs**, so hand-writing the JSON is no way past it. |
 | `send <role> --candidates <ids> --summary <text>` | Send the shortlist you wrote. **The same name check and link building run** — writing the prose yourself does not get you past them. |
+| `resend <role>` | Send the last delivered shortlist again — same ranking, same reasons, no model. Each entry is rebuilt from today's records, and the same guards run. |
+| `index <role>` | Build the two files a shortlist reads (every assessment and every arrival record, one file each), so a shortlist costs two reads instead of one per candidate. The first run reads everything once — do it on a good connection; after that only what changed is read. `assess` keeps them up to date on its own. |
 
 The loop is: `next` → read it → write the JSON → `record` → repeat until
 "nothing waiting". Then `status`, then `send`.
