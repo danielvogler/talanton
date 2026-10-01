@@ -168,3 +168,40 @@ def test_arrival_records_are_read_only_for_the_shortlisted(position, sent, monke
     small, large = costs_as_the_pool_grows(send, monkeypatch)
     assert large.reads == small.reads, f"arrival records are read per candidate on file: {small} -> {large}"
     assert large.lists == small.lists, f"lists grew: {small} -> {large}"
+
+
+def test_a_shortlist_run_reads_the_pool_once(position, sent, monkeypatch):
+    """The agent lists the pool, then the correspondent's send checks every
+    name in it. Two tool calls, one pool: on a bad link each extra read is a
+    download with four retries."""
+    from talanton import run
+
+    ids = build_pool(LARGE)
+
+    def converse(*args, **kwargs):
+        tools.list_candidates(OPENING)
+        tools.send_digest(OPENING, "Three.", picks(*ids[:3]))
+        return run.Turn(text="sent")
+
+    monkeypatch.setattr(run, "converse", converse)
+    tally = counted(monkeypatch)
+    tally.reset()
+    run.shortlist(OPENING)
+    assert tally.reads < LARGE * 2, f"{tally.reads} reads for a pool of {LARGE}: read more than once"
+
+
+def test_a_saved_assessment_is_seen_inside_the_same_run(position):
+    """Kept for one run, but never at the price of a stale answer."""
+    ids = build_pool(SMALL)
+    with store.assessments_cached():
+        before = store.load_assessments(OPENING)
+        store.save_assessment(ids[0], {**before[ids[0]], "overall": 9.5}, OPENING)
+        assert store.load_assessments(OPENING)[ids[0]]["overall"] == 9.5
+        assert store.assessments_for({ids[0]}, OPENING)[ids[0]]["overall"] == 9.5
+
+
+def test_outside_a_run_nothing_is_kept(position):
+    ids = build_pool(SMALL)
+    store.load_assessments(OPENING)
+    store.assessments(OPENING).write(store.assessment_name(ids[0]), b"candidate: x\noverall: 1.0\n")
+    assert store.load_assessments(OPENING)[ids[0]]["overall"] == 1.0

@@ -282,12 +282,14 @@ def shortlist(role: str) -> str:
     declined, the report goes out anyway with the counts — an operator who
     receives nothing cannot tell that from a pipeline that failed silently.
     """
-    from . import tools
+    from . import store, tools
 
     # Two sources, because delivery can be established in two places and the
     # stream is the one that cannot see the ordinary path: `send_digest` is
     # reached through the correspondent, whose events `AgentTool` consumes.
-    with tools.deliveries_recorded() as delivered:
+    # One read of the pool for the whole run: the agent's listing and the
+    # send's name check otherwise each download every assessment.
+    with tools.deliveries_recorded() as delivered, store.assessments_cached():
         turn = converse(SHORTLIST_PROMPT.format(role=role), user_id="system")
     if not (turn.delivered or delivered):
         report(role, turn)
