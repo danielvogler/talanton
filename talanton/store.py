@@ -17,6 +17,7 @@ import hashlib
 import json
 import logging
 import re
+import time
 from collections.abc import Iterator, Sequence
 from contextlib import contextmanager
 from datetime import UTC, datetime
@@ -54,6 +55,29 @@ ID_LENGTH = 16
 # Module-level rather than a ContextVar, for the reason `tools._delivered` is:
 # the correspondent runs on another thread, and a ContextVar does not cross.
 _pool_cache: dict[str, dict[str, dict[str, Any]]] | None = None
+
+
+# How often a read of many files says how far it got: every so many files, or
+# after this long without a line, whichever comes first. On a link that drops
+# connections ten reads can take minutes, and a silent log cannot tell a slow
+# run from a stuck one.
+PROGRESS_EVERY = 10
+PROGRESS_SECONDS = 5.0
+
+
+class Progress:
+    """Counts one read of many files up to its total, logging as it goes."""
+
+    def __init__(self, what: str, total: int) -> None:
+        self.what, self.total, self.done = what, total, 0
+        self.said_at = time.monotonic()
+
+    def tick(self) -> None:
+        self.done += 1
+        now = time.monotonic()
+        if self.done == self.total or self.done % PROGRESS_EVERY == 0 or now - self.said_at >= PROGRESS_SECONDS:
+            logging.info("%s: %d/%d read", self.what, self.done, self.total)
+            self.said_at = now
 
 
 @contextmanager
@@ -347,12 +371,13 @@ def load_assessments(opening: str = "") -> dict[str, dict[str, Any]]:
     if _pool_cache is not None and opening in _pool_cache:
         return _copied(_pool_cache[opening])
     location = assessments(opening)
+    items = [item for item in location.list() if item.name.endswith(ASSESSMENT_SUFFIX)]
+    progress = Progress("assessments", len(items))
     out = {}
-    for item in location.list():
-        if not item.name.endswith(ASSESSMENT_SUFFIX):
-            continue
+    for item in items:
         parsed = yaml.safe_load(location.read(item).decode("utf-8")) or {}
         out[item.name.removesuffix(ASSESSMENT_SUFFIX)] = {**parsed, "uri": item.uri}
+        progress.tick()
     if _pool_cache is not None:
         _pool_cache[opening] = _copied(out)
     return out
