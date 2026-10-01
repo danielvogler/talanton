@@ -40,11 +40,17 @@ class Item:
 
     `id` is stable for the same file in the same place, so "have I already
     assessed this?" is answerable without a database.
+
+    `version` changes whenever the contents do, and comes with the listing at
+    no extra cost, so a mirror of many small files can tell which of its rows
+    are stale without reading them. Empty where a backend cannot say, which a
+    mirror treats as always stale.
     """
 
     id: str
     name: str
     uri: str
+    version: str = ""
 
 
 def safe_filename(name: str) -> str:
@@ -119,7 +125,13 @@ class LocalLocation:
         ]
 
     def _item(self, path: Path) -> Item:
-        return Item(id=path.name, name=path.name, uri=path.resolve().as_uri())
+        stat = path.stat()
+        return Item(
+            id=path.name,
+            name=path.name,
+            uri=path.resolve().as_uri(),
+            version=f"{stat.st_mtime_ns}:{stat.st_size}",
+        )
 
     def read(self, item: Item) -> bytes:
         target = self.path / safe_filename(item.id)

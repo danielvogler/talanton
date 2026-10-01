@@ -25,7 +25,7 @@ from typing import Any
 
 import yaml
 
-from . import documents, locations
+from . import documents, locations, mirror
 from .config import current
 from .locations import Item, LocationError
 
@@ -42,6 +42,15 @@ REPORT_MARKER = "last-report.json"
 # knowable by reading their documents, and the digest is not the place to read
 # every waiting application again — the run that already met them knows.
 UNREADABLE_MARKER = "unreadable.json"
+# One file each that mirrors the opening's assessments and its arrival records,
+# so a shortlist reads two files rather than one per candidate. Both live among
+# the assessments, beside the markers above and like them not .yaml, so
+# nothing that reads assessments can take one for an assessment.
+ASSESSMENT_MIRROR = "assessments.mirror.json"
+ARRIVALS_MIRROR = "arrivals.mirror.json"
+# The last shortlist that reached a mailbox: its introduction and its ranked
+# entries, so it can be sent again without the agent choosing again.
+LAST_SHORTLIST = "last-shortlist.json"
 ID_PREFIX = "c-"
 ID_LENGTH = 16
 
@@ -262,16 +271,7 @@ def provenances(opening: str = "") -> dict[str, dict[str, Any]]:
     caller can tell "arrived before this was recorded" from "arrived by an
     unknown route".
     """
-    location = cvs(opening)
-    out: dict[str, dict[str, Any]] = {}
-    for item in location.list():
-        if not item.name.endswith(PROVENANCE_SUFFIX):
-            continue
-        candidate = item.name.removesuffix(PROVENANCE_SUFFIX)
-        parsed = _read_provenance(location, item, candidate)
-        if parsed is not None:
-            out[candidate] = parsed
-    return out
+    return _arrivals(opening)
 
 
 def provenances_for(candidates: set[str], opening: str = "") -> dict[str, dict[str, Any]]:
@@ -281,24 +281,43 @@ def provenances_for(candidates: set[str], opening: str = "") -> dict[str, dict[s
     question is the whole pool and wrong when it is the handful being written
     about. Candidates with no record are absent, exactly as in `provenances`.
     """
+    return _arrivals(opening, {provenance_name(c) for c in candidates})
+
+
+def _arrivals(opening: str, only: set[str] | None = None) -> dict[str, dict[str, Any]]:
+    """Arrival records through their mirror, by candidate id."""
     location = cvs(opening)
-    wanted = {provenance_name(c): c for c in candidates}
-    out: dict[str, dict[str, Any]] = {}
-    for item in location.list():
-        candidate = wanted.get(item.name)
-        if candidate is None:
-            continue
-        parsed = _read_provenance(location, item, candidate)
-        if parsed is not None:
-            out[candidate] = parsed
-    return out
+
+    def parse(item: Item, payload: bytes) -> dict[str, Any] | None:
+        return _parse_provenance(payload, item.name.removesuffix(PROVENANCE_SUFFIX))
+
+    found = mirror.records(
+        location,
+        lambda name: name.endswith(PROVENANCE_SUFFIX),
+        parse,
+        mirror=assessments(opening),
+        name=ARRIVALS_MIRROR,
+        what="arrival records",
+        only=only,
+    )
+    return {name.removesuffix(PROVENANCE_SUFFIX): data for name, (_, data) in found.items()}
 
 
 def _read_provenance(location: locations.Location, item: Item, candidate: str) -> dict[str, Any] | None:
     """One record, or None if it cannot be read. A damaged one is not fatal."""
     try:
-        parsed = yaml.safe_load(location.read(item).decode("utf-8"))
-    except (yaml.YAMLError, UnicodeDecodeError, LocationError):
+        payload = location.read(item)
+    except LocationError:
+        logging.warning("Could not read the provenance record for %s; treating it as absent", candidate)
+        return None
+    return _parse_provenance(payload, candidate)
+
+
+def _parse_provenance(payload: bytes, candidate: str) -> dict[str, Any] | None:
+    """One record's contents, or None if they cannot be used."""
+    try:
+        parsed = yaml.safe_load(payload.decode("utf-8"))
+    except (yaml.YAMLError, UnicodeDecodeError):
         logging.warning("Could not read the provenance record for %s; treating it as absent", candidate)
         return None
     return parsed if isinstance(parsed, dict) else None
@@ -346,13 +365,7 @@ def load_assessments(opening: str = "") -> dict[str, dict[str, Any]]:
     """Every assessment for one opening, by candidate id."""
     if _pool_cache is not None and opening in _pool_cache:
         return _copied(_pool_cache[opening])
-    location = assessments(opening)
-    out = {}
-    for item in location.list():
-        if not item.name.endswith(ASSESSMENT_SUFFIX):
-            continue
-        parsed = yaml.safe_load(location.read(item).decode("utf-8")) or {}
-        out[item.name.removesuffix(ASSESSMENT_SUFFIX)] = {**parsed, "uri": item.uri}
+    out = _mirrored_assessments(opening)
     if _pool_cache is not None:
         _pool_cache[opening] = _copied(out)
     return out
@@ -368,16 +381,35 @@ def assessments_for(candidates: set[str], opening: str = "") -> dict[str, dict[s
     """
     if _pool_cache is not None and opening in _pool_cache:
         return _copied({c: a for c, a in _pool_cache[opening].items() if c in candidates})
-    location = assessments(opening)
-    wanted = {assessment_name(c): c for c in candidates}
-    out: dict[str, dict[str, Any]] = {}
-    for item in location.list():
-        candidate = wanted.get(item.name)
-        if candidate is None:
-            continue
-        parsed = yaml.safe_load(location.read(item).decode("utf-8")) or {}
-        out[candidate] = {**parsed, "uri": item.uri}
-    return out
+    return _mirrored_assessments(opening, {assessment_name(c) for c in candidates})
+
+
+def _mirrored_assessments(opening: str, only: set[str] | None = None) -> dict[str, dict[str, Any]]:
+    """Assessments through their mirror, by candidate id, each with its URI."""
+
+    def parse(item: Item, payload: bytes) -> dict[str, Any]:
+        return yaml.safe_load(payload.decode("utf-8")) or {}
+
+    found = mirror.records(
+        assessments(opening),
+        lambda name: name.endswith(ASSESSMENT_SUFFIX),
+        parse,
+        name=ASSESSMENT_MIRROR,
+        what="assessments",
+        only=only,
+    )
+    return {
+        name.removesuffix(ASSESSMENT_SUFFIX): {**data, "uri": item.uri} for name, (item, data) in found.items()
+    }
+
+
+def refresh(opening: str) -> dict[str, int]:
+    """Brings both mirrors up to date, reading only what changed.
+
+    Run at the end of an assessing run, so the shortlist after it reads two
+    files; and by `talanton index`, to build them the first time.
+    """
+    return {"assessments": len(_mirrored_assessments(opening)), "arrivals": len(_arrivals(opening))}
 
 
 def assessment(candidate: str, opening: str = "") -> dict[str, Any]:
@@ -466,3 +498,27 @@ def record_report(candidates: set[str], opening: str = "") -> Item:
         {"candidates": sorted(candidates), "at": datetime.now(UTC).isoformat()}, indent=2
     ).encode("utf-8")
     return assessments(opening).write(REPORT_MARKER, payload)
+
+
+def record_shortlist(summary: str, entries: list[dict[str, str]], opening: str = "") -> Item:
+    """Remembers the shortlist that was just delivered, replacing the last one."""
+    payload = json.dumps(
+        {"summary": summary, "candidates": entries, "at": datetime.now(UTC).isoformat()},
+        indent=2,
+        ensure_ascii=False,
+    ).encode("utf-8")
+    return assessments(opening).write(LAST_SHORTLIST, payload)
+
+
+def last_shortlist(opening: str = "") -> dict[str, Any] | None:
+    """The last delivered shortlist, or None if there is none to send again."""
+    location = assessments(opening)
+    item = next((i for i in location.list() if i.name == LAST_SHORTLIST), None)
+    if item is None:
+        return None
+    try:
+        parsed = json.loads(location.read(item).decode("utf-8"))
+    except (ValueError, UnicodeDecodeError):
+        logging.warning("Could not read %s; there is no shortlist to send again", LAST_SHORTLIST)
+        return None
+    return parsed if isinstance(parsed, dict) else None

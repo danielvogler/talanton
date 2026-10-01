@@ -10,6 +10,43 @@ happen.
 
 ## [Unreleased]
 
+## [0.13.0] - 2026-10-01
+
+### Added
+
+- A shortlist costs two reads, not one per candidate. Each opening keeps
+  `assessments.mirror.json` and `arrivals.mirror.json` beside its assessments,
+  and a shortlist reads those instead of downloading every assessment and
+  arrival record. Over a slow link the per-candidate reads took half an hour.
+
+  The mirror is a cache and never the record. Each row carries the version of
+  the file it was read from, as the listing reports it at no extra cost, and is
+  used only while that still matches: a changed file is read again, a removed
+  one drops out, and a row lost because two runs wrote the mirror at once is
+  read again next time rather than sent stale. No lock, because nothing in it
+  can be wrong for long enough to matter.
+
+  An assessing run brings the mirrors up to date at its end, reading only what
+  it wrote.
+
+- `talanton index <opening>` builds the mirrors. The first run reads every
+  assessment and arrival record once, so run it on a good connection; after
+  that it reads only what changed.
+
+- `talanton resend <opening>` sends the last delivered shortlist again — the
+  same ranking and reasons, no model call — with each entry rebuilt from the
+  current records and through the same guards.
+
+## [0.12.2] - 2026-10-01
+
+### Added
+
+- A shortlist says how far it got. Reading an opening's assessments logs
+  `assessments: 40/100 read` every ten files, or after five seconds without a
+  line, and the send logs each phase — checking names, sending, and whether
+  the mail was sent, declined or failed. On a slow link the log used to stop
+  after the model's reply, and a slow run looked exactly like a stuck one.
+
 ## [0.12.1] - 2026-10-01
 
 ### Fixed
@@ -431,7 +468,9 @@ happen.
   IMAP for the apply mailbox, `dry_run` on by default everywhere, and
   candidate data gitignored by `talanton init` before the first CV arrives.
 
-[Unreleased]: https://github.com/danielvogler/talanton/compare/v0.12.1...HEAD
+[Unreleased]: https://github.com/danielvogler/talanton/compare/v0.13.0...HEAD
+[0.13.0]: https://github.com/danielvogler/talanton/compare/v0.12.2...v0.13.0
+[0.12.2]: https://github.com/danielvogler/talanton/compare/v0.12.1...v0.12.2
 [0.12.1]: https://github.com/danielvogler/talanton/compare/v0.12.0...v0.12.1
 [0.12.0]: https://github.com/danielvogler/talanton/compare/v0.11.0...v0.12.0
 [0.11.0]: https://github.com/danielvogler/talanton/compare/v0.10.0...v0.11.0

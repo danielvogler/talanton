@@ -29,6 +29,7 @@ from google.genai import types
 from . import inbound
 from .agent import app, assessor_app
 from .config import current
+from .locations import LocationError
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s", force=True)
 
@@ -219,6 +220,13 @@ def assess(role: str, rescreen: bool = False) -> str:
     # Recorded whether or not there were any, so somebody who sends a readable
     # file after being asked stops being counted.
     store.record_unreadable(set(unreadable), slug)
+    # So the shortlist after this run reads the mirrors and nothing else. Only
+    # what this run wrote is read here, and failing is not failing the stage:
+    # the shortlist rebuilds whatever is missing.
+    try:
+        store.refresh(slug)
+    except LocationError as exc:
+        logging.warning("Could not bring the mirror up to date (%s); the shortlist will", exc)
     if unreadable:
         # Not a failure, and never was: nothing is saved for a document that
         # cannot be read, so it stays in the queue for good. Counting that as

@@ -11,6 +11,7 @@ Three things are enforced here rather than left to the model:
     names someone is refused, not quietly sent.
 """
 
+import logging
 import re
 import unicodedata
 import uuid
@@ -699,6 +700,8 @@ def send_digest(opening: str, summary: str, candidates: list[digest.ShortlistEnt
     # Skipped entirely when the name check is not running, since the counts
     # alone do not need anybody's contents.
     checking_names = not current().shortlist.names
+    if checking_names:
+        logging.info("shortlist: checking names across opening %s", slug)
     pool = store.load_assessments(slug) if checking_names else None
 
     body = _compose(summary, picks, shortlisted, slug, pool)
@@ -708,6 +711,9 @@ def send_digest(opening: str, summary: str, candidates: list[digest.ShortlistEnt
     # refused "Marco" in one paragraph and mailed him in the next.
     named = _names_in(body, slug, pool) if checking_names else set()
     if named:
+        # Never the names themselves: this log is read by more people than
+        # the folder the CVs are in.
+        logging.info("shortlist: declined, the mail would name a candidate")
         return {
             "sent": False,
             "reason": f"what this would send names {', '.join(sorted(named))}. Shortlists go by "
@@ -723,11 +729,13 @@ def send_digest(opening: str, summary: str, candidates: list[digest.ShortlistEnt
     # delivery failing, which no retry fixes and which `run.tool_failures`
     # turns into a non-zero exit — otherwise the traceback becomes text in a
     # function response and the run reports success having sent nothing.
+    logging.info("shortlist: sending %d entr%s", len(shortlisted), "y" if len(shortlisted) == 1 else "ies")
     delivered: list[str] = []
     for address in operators:
         try:
             outbound.send(to=address, subject=subject, body=body)
         except outbound.SendError as exc:
+            logging.info("shortlist: delivery failed after %d operator(s)", len(delivered))
             return {"sent": False, "error": str(exc), "delivered": delivered}
         delivered.append(address)
         # Recorded as it happens, so the stage that asked for this digest can
@@ -735,11 +743,14 @@ def send_digest(opening: str, summary: str, candidates: list[digest.ShortlistEnt
         # leaves the correspondent's own runner.
         _delivered.append(address)
 
+    logging.info("shortlist: sent to %d operator(s)", len(delivered))
+
     # Only what actually reached a mailbox counts as reported. A dry run shows
     # the operator nothing, so it must not consume the "new since" they are
     # owed on the first real send.
     if not current().outbound.dry_run:
         store.record_report(_candidates(slug), slug)
+        store.record_shortlist(summary, [pick.model_dump() for pick in picks], slug)
 
     return {
         "sent": True,
