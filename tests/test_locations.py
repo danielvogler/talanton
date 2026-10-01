@@ -402,3 +402,29 @@ def test_with_no_service_account_configured_it_still_says_what_to_run(configure,
     message = str(caught.value)
     assert "gcloud auth application-default login" in message
     assert "service_account" in message, "it should say how to name one"
+
+
+def test_a_network_failure_is_not_blamed_on_the_login(configure, monkeypatch):
+    """No route to Google's token server is a network problem. Telling
+    somebody on a flaky link to log in again sends them the wrong way."""
+    import google.auth.exceptions
+
+    from talanton import config, drive, locations
+
+    class Files:
+        def list(self, **kwargs):
+            raise google.auth.exceptions.TransportError(
+                "Unable to find the server at iamcredentials.googleapis.com"
+            )
+
+        get = list
+
+    monkeypatch.setattr(drive, "service", lambda: type("S", (), {"files": lambda self: Files()})())
+    configure(screening=config.Screening(service_account="talanton@acme.iam.gserviceaccount.com"))
+
+    with pytest.raises(locations.LocationError) as caught:
+        locations.DriveLocation(folder_id="1G750").verify()
+
+    message = str(caught.value)
+    assert "network" in message.lower()
+    assert "gcloud auth" not in message
