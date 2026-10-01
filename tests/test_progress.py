@@ -2,7 +2,7 @@
 
 import logging
 
-from talanton import store, tools
+from talanton import mirror, store, tools
 from tests.conftest import OPENING, picks
 from tests.test_round_trip_budget import build_pool
 
@@ -31,7 +31,7 @@ def test_a_small_read_says_only_that_it_finished(position, caplog):
 def test_a_slow_read_reports_before_the_next_ten(position, caplog, monkeypatch):
     """On a link that resets, ten reads can take minutes. Time counts too."""
     clock = iter(range(0, 1000, 10))
-    monkeypatch.setattr(store.time, "monotonic", lambda: next(clock))
+    monkeypatch.setattr(mirror.time, "monotonic", lambda: next(clock))
     build_pool(4)
     with caplog.at_level(logging.INFO):
         store.load_assessments(OPENING)

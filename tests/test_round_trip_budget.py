@@ -95,7 +95,8 @@ def test_a_digest_reads_only_the_shortlisted_when_it_need_not_check_names(
         tools.send_digest(OPENING, f"{ids[0]} is worth a look", picks(*ids[:3]))
 
     small, large = costs_as_the_pool_grows(send, monkeypatch)
-    assert large.reads == small.reads, (
+    # At most: once the mirror holds the pool, the second send is cheaper.
+    assert large.reads <= small.reads, (
         f"reads grew with the pool rather than with the shortlist: {small} -> {large}"
     )
 
@@ -166,7 +167,7 @@ def test_arrival_records_are_read_only_for_the_shortlisted(position, sent, monke
         tools.send_digest(OPENING, f"{ids[0]} is worth a look", picks(*ids[:3]))
 
     small, large = costs_as_the_pool_grows(send, monkeypatch)
-    assert large.reads == small.reads, f"arrival records are read per candidate on file: {small} -> {large}"
+    assert large.reads <= small.reads, f"arrival records are read per candidate on file: {small} -> {large}"
     assert large.lists == small.lists, f"lists grew: {small} -> {large}"
 
 
