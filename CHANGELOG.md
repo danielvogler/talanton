@@ -10,6 +10,28 @@ happen.
 
 ## [Unreleased]
 
+## [0.14.0] - 2026-10-02
+
+### Added
+
+- `[shortlist] size = N` fixes how many candidates the mail carries: the top N
+  of the shortlistable pool by score, after the knockouts and the floor. The
+  agent decided before, so the count changed from run to run — a mail meant to
+  carry twenty carried twenty-two. The agent still writes each reason; a pick
+  outside the cut is refused with that reason, and a top candidate it skipped
+  is listed anyway. The footer says what places N+1 and N+2 scored, so a tie
+  at the cut is visible. Unset, nothing changes.
+
+### Fixed
+
+- An empty flag is never stored. A model asked for a list sometimes answers
+  `[""]`, which was saved and counted as a flag that said nothing.
+- The screener is told that credibility problems — dates that do not add up,
+  claims that cannot be true as written — belong in `flags`, which the mail
+  shows beside the score, and not only in the justification.
+- The candidate-data commit hook runs through `uv run`, so it no longer fails
+  on a machine with no `python` on its PATH.
+
 ## [0.13.0] - 2026-10-01
 
 ### Added
@@ -468,7 +490,8 @@ happen.
   IMAP for the apply mailbox, `dry_run` on by default everywhere, and
   candidate data gitignored by `talanton init` before the first CV arrives.
 
-[Unreleased]: https://github.com/danielvogler/talanton/compare/v0.13.0...HEAD
+[Unreleased]: https://github.com/danielvogler/talanton/compare/v0.14.0...HEAD
+[0.14.0]: https://github.com/danielvogler/talanton/compare/v0.13.0...v0.14.0
 [0.13.0]: https://github.com/danielvogler/talanton/compare/v0.12.2...v0.13.0
 [0.12.2]: https://github.com/danielvogler/talanton/compare/v0.12.1...v0.12.2
 [0.12.1]: https://github.com/danielvogler/talanton/compare/v0.12.0...v0.12.1
