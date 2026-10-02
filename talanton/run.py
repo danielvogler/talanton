@@ -298,10 +298,27 @@ def shortlist(role: str) -> str:
     # One read of the pool for the whole run: the agent's listing and the
     # send's name check otherwise each download every assessment.
     with tools.deliveries_recorded() as delivered, store.assessments_cached():
-        turn = converse(SHORTLIST_PROMPT.format(role=role), user_id="system")
+        turn = converse(shortlist_prompt(role), user_id="system")
     if not (turn.delivered or delivered):
         report(role, turn)
     return turn.text
+
+
+def shortlist_prompt(role: str) -> str:
+    """The shortlist instruction, naming the size where the deployment set one.
+
+    With a size the code decides who is in; asking the agent to choose as
+    well would only produce reasons for people the mail then leaves out.
+    """
+    prompt = SHORTLIST_PROMPT.format(role=role)
+    size = current().shortlist.size
+    if not size:
+        return prompt
+    return (
+        f"{prompt}\n\nThis deployment shortlists the top {size} by score; the mail takes them in "
+        f"that order whatever you pass. Write one line of why for each of the top {size} from "
+        "list_candidates, and do not list anybody else."
+    )
 
 
 def report(role: str, turn: Turn) -> None:

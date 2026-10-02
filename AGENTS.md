@@ -149,9 +149,14 @@ Then ask what is genuinely missing, a few at a time.
    a GCS bucket. The two can differ. Shared storage is worth it as soon as
    other people need to read CVs, because then folder or bucket permissions are
    what control who sees whom — not an email distribution list.
-3. **Who receives the shortlist?** It reaches those addresses and nobody else,
-   and it carries candidate ids and CV links — never names. Identity is behind
-   the link, where storage permissions control it.
+3. **Who receives the shortlist, and how many candidates should it carry?** It
+   reaches those addresses and nobody else, and it carries candidate ids and CV
+   links — never names. Identity is behind the link, where storage permissions
+   control it. Each candidate is one numbered entry: score, CV link, then
+   whatever is on record (employers, how and when they applied, open facts,
+   what the screener flagged) and one line of why. `[shortlist] size = 20`
+   fixes the count at the top 20 by score, with what places 21 and 22 scored
+   in the footer; unset, the agent decides how many are worth a look.
 4. **Which domains may outbound mail reach?** Usually just their own.
 5. **If they want a mailbox: two accounts, not one.** One reads the apply
    inbox and cannot send; one sends and has no access to that inbox. If they
