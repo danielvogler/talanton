@@ -151,6 +151,10 @@ class Shortlist:
     """
 
     names: bool = False
+    # How many candidates the mail carries: the top N of the shortlistable pool
+    # by score. Unset, the correspondent decides, and the count changes from
+    # run to run with the model's reading of "worth your time".
+    size: int | None = None
 
 
 @dataclass(frozen=True)
@@ -314,9 +318,13 @@ def _screening(data: dict[str, Any]) -> Screening:
 
 
 def _shortlist(data: dict[str, Any]) -> Shortlist:
-    """[shortlist] — whether the mail may name a candidate."""
+    """[shortlist] — whether the mail may name a candidate, and how many it carries."""
     section = _section(data, "shortlist")
-    return Shortlist(names=bool(section.get("names", Shortlist.names)))
+    size = section.get("size")
+    # bool is an int in Python, and `size = true` is a typo rather than a size.
+    if size is not None and (isinstance(size, bool) or not isinstance(size, int) or size < 1):
+        raise ConfigError(f"[shortlist] size must be a whole number of at least 1, not {size!r}")
+    return Shortlist(names=bool(section.get("names", Shortlist.names)), size=size)
 
 
 def _intake(data: dict[str, Any]) -> Intake:

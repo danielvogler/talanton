@@ -81,6 +81,8 @@ repos:
       # it.
       - id: refuse-candidate-data
         name: Refuse candidate data
-        entry: python scripts/refuse_candidate_data.py
+        # Through uv, so the hook needs no `python` on PATH, only the
+        # project's own environment.
+        entry: uv run python scripts/refuse_candidate_data.py
         language: system
         pass_filenames: true
