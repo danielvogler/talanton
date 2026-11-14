@@ -692,24 +692,32 @@ def send_digest(opening: str, summary: str, candidates: list[digest.ShortlistEnt
     except outbound.NotAllowedError as exc:
         return {"sent": False, "reason": str(exc)}
 
-    shortlisted, refused = _cv_links([p.candidate for p in picks], position)
-
-    # Loaded once for the whole of this send. The counts and the name check are
-    # both questions about the pool, and each used to answer its own by
-    # downloading every assessment again — three full passes to send one mail.
-    # Skipped entirely when the name check is not running, since the counts
-    # alone do not need anybody's contents.
+    # Loaded once for the whole of this send. The counts, the cut and the name
+    # check are all questions about the pool, and each used to answer its own
+    # by downloading every assessment again. Skipped entirely when neither the
+    # name check nor a size needs it, since the counts alone do not.
     checking_names = not current().shortlist.names
+    size = current().shortlist.size
     if checking_names:
         logging.info("shortlist: checking names across opening %s", slug)
-    pool = store.load_assessments(slug) if checking_names else None
+    pool = store.load_assessments(slug) if checking_names or size else None
 
-    body = _compose(summary, picks, shortlisted, slug, pool)
+    cut = ""
+    outside: list[dict[str, str]] = []
+    asked = [p.candidate for p in picks]
+    if size and pool is not None:
+        picks, outside, others, cut = _top(picks, pool, position, size)
+        asked = [p.candidate for p in picks] + others
+    shortlisted, refused = _cv_links(asked, position)
+    refused = outside + refused
+
+    names_pool = pool if checking_names else None
+    body = _compose(summary, picks, shortlisted, slug, names_pool, cut)
 
     # The whole body, not only the prose. A CV stored under the name its sender
     # gave it puts that name into the link, so checking the summary alone
     # refused "Marco" in one paragraph and mailed him in the next.
-    named = _names_in(body, slug, pool) if checking_names else set()
+    named = _names_in(body, slug, names_pool) if checking_names else set()
     if named:
         # Never the names themselves: this log is read by more people than
         # the folder the CVs are in.
@@ -863,12 +871,43 @@ def _cv_links(candidates: list[str], position: dict) -> tuple[dict[str, dict], l
     return shortlisted, refused
 
 
+def _top(
+    picks: list[digest.ShortlistEntry], pool: dict[str, dict], position: dict, size: int
+) -> tuple[list[digest.ShortlistEntry], list[dict[str, str]], list[str], str]:
+    """The top `size` of the shortlistable pool by score, with the agent's reasons.
+
+    Returns the entries, the agent's picks that fell outside the cut, the picks
+    that are not shortlistable at all (left for `_cv_links` to refuse with the
+    reason that applies), and the line saying what the next places scored.
+    Ties keep the agent's order, then the id, so the same pool always cuts the
+    same way.
+    """
+    order = {p.candidate: n for n, p in enumerate(picks)}
+    eligible = {
+        candidate: float(assessment["overall"])
+        for candidate, assessment in pool.items()
+        if assessment.get("overall") is not None and not screening.exclusions(assessment, position)
+    }
+    ranked = sorted(eligible, key=lambda c: (-eligible[c], order.get(c, len(order)), c))
+    top = ranked[:size]
+    given = {p.candidate: p for p in picks}
+    outside = [
+        {"candidate": p.candidate, "reason": f"outside the top {size} by score"}
+        for p in picks
+        if p.candidate in eligible and p.candidate not in top
+    ]
+    others = [p.candidate for p in picks if p.candidate not in eligible]
+    entries = [given.get(c) or digest.ShortlistEntry(candidate=c) for c in top]
+    return entries, outside, others, digest.cut_line(size, [eligible[c] for c in ranked[size : size + 2]])
+
+
 def _compose(
     summary: str,
     picks: list[digest.ShortlistEntry],
     shortlisted: dict[str, dict],
     slug: str,
     pool: dict | None,
+    cut: str = "",
 ) -> str:
     """The whole mail body: the introduction, the entries, the footer.
 
@@ -896,5 +935,9 @@ def _compose(
         for c, a in shortlisted.items()
     }
     listed = digest.entries(picks, found, keep=lambda line: pool is None or not _names_in(line, slug, pool))
-    sections = [summary.rstrip(), listed, digest.footer(_counts_line(slug), version(), linked=bool(ids))]
+    sections = [
+        summary.rstrip(),
+        listed,
+        digest.footer(_counts_line(slug), version(), linked=bool(ids), cut=cut),
+    ]
     return "\n\n".join(section for section in sections if section)

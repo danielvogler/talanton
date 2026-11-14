@@ -211,9 +211,19 @@ def arrivals(records: dict[str, dict[str, Any]], candidates: list[str]) -> dict[
     return {c: arrival_line(records.get(c) or {}) for c in candidates}
 
 
-def footer(counts_line: str, version: str, linked: bool) -> str:
-    """The counts, the access note when there are links, and the version."""
-    lines = [counts_line]
+def cut_line(size: int, next_scores: list[float]) -> str:
+    """What the places just below the cut scored, so a tie there is visible."""
+    shown = [f"{score:g}" for score in next_scores]
+    if len(shown) == 1:
+        return f"Place {size + 1} scored {shown[0]}."
+    if len(shown) == 2:
+        return f"Places {size + 1} and {size + 2} scored {shown[0]} and {shown[1]}."
+    return ""
+
+
+def footer(counts_line: str, version: str, linked: bool, cut: str = "") -> str:
+    """The cut, the counts, the access note when there are links, and the version."""
+    lines = [cut, counts_line] if cut else [counts_line]
     if linked:
         lines += ["", ACCESS_NOTE]
     if version:

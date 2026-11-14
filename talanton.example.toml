@@ -162,3 +162,9 @@ max_output_tokens = 8000
 
 # [shortlist]
 # names = true
+#
+# How many candidates the mail carries: the top N of the shortlistable pool by
+# score, after the knockouts and the floor. The footer says what places N+1
+# and N+2 scored, so a tie at the cut is visible. Unset, the agent decides how
+# many are worth your time, and the number changes from run to run.
+# size = 20

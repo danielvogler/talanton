@@ -309,7 +309,9 @@ path to one, which a test proves by walking the import graph rather than
 grepping. The side that sends holds no mailbox access, so if it were misused it
 could not read a CV.
 
-**What leaves names nobody.** The shortlist carries candidate ids and CV links.
+**What leaves names nobody.** The shortlist carries candidate ids and CV links,
+one numbered entry per candidate with the score and the link at the top —
+`[shortlist] size` fixes how many.
 A summary that names someone is refused by the tool — the check runs against
 every name the screener recorded, accents folded and spellings run together, so
 it cannot be talked out of one it holds. It is a backstop rather than a proof:
